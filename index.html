@@ -89,6 +89,18 @@
         </div>
         <div class="input-group"><label>Ano</label><input type="number" id="anoRef" class="form-control" value="2026"></div>
         <div class="input-group"><label>Unidade</label><select id="filtroUnidade" class="form-control" onchange="renderizar(); renderizarPainel();"><option value="">Todas</option></select></div>
+        
+        <div class="input-group">
+            <label>Status Operacional</label>
+            <select id="filtroStatusEnvio" class="form-control" onchange="renderizar()">
+                <option value="todos">Todos os Status</option>
+                <option value="Pendente">⏳ Apenas Pendentes</option>
+                <option value="Enviado">📤 Apenas Enviados</option>
+                <option value="Pago">✅ Apenas Pagos</option>
+                <option value="Número Inválido">🚫 Números Inválidos</option>
+            </select>
+        </div>
+
         <div class="input-group">
             <label>Marcador ★</label>
             <select id="filtroMarcado" class="form-control" onchange="renderizar()">
@@ -191,7 +203,7 @@
         }
     }
 
-    // --- LÓGICA DE MENSAGENS ORIGINAL ---
+    // --- MENSAGENS ORIGINAIS PRESERVADAS ---
     function gerarTextoZap(aluno) {
         const hoje = new Date(); hoje.setHours(0,0,0,0);
         const mensalidade = aluno.mensalidades?.find(m => !m.pago);
@@ -199,7 +211,6 @@
         const dataVenc = new Date(mensalidade.vencimento + 'T00:00:00');
         const mesExtenso = nomesMesesLongos[mensalidade.mes];
         const anoRef = document.getElementById('anoRef').value;
-        
         if (hoje > dataVenc) {
             const diffDays = Math.ceil(Math.abs(hoje - dataVenc) / (1000 * 60 * 60 * 24));
             return `Olá ${aluno.nome}, tudo bem? Notamos que a sua mensalidade de ${mesExtenso} está em atraso há ${diffDays} dias. Precisamos regularizar sua situação no portal para evitar suspensão de serviços. Caso já tenha pago, desconsidere esta mensagem.`;
@@ -229,12 +240,15 @@
         const fUni = document.getElementById('filtroUnidade').value;
         const fCat = document.getElementById('filtroCategoria').value;
         const fMarcado = document.getElementById('filtroMarcado').value;
+        const fStatus = document.getElementById('filtroStatusEnvio').value;
         
         const lista = Object.values(window.alunos).filter(a => {
+            const status = a.controleEnvio || 'Pendente';
             const matchFiltros = (!fUni || a.unidade === fUni) && (!fCat || a.categoria === fCat);
             const matchBusca = (a.nome?.toLowerCase().includes(b) || a.ra.includes(b));
             const matchMarcado = (fMarcado === 'todos' || (fMarcado === 'marcados' && a.marcado));
-            return matchFiltros && matchBusca && matchMarcado;
+            const matchStatusEnvio = (fStatus === 'todos' || status === fStatus);
+            return matchFiltros && matchBusca && matchMarcado && matchStatusEnvio;
         }).sort((x,y) => x.nome.localeCompare(y.nome));
         
         t.innerHTML = '';
@@ -271,35 +285,24 @@
         const mesRef = parseInt(document.getElementById('mesRefDash').value);
         const hoje = new Date(); hoje.setHours(0,0,0,0);
         const lista = Object.values(window.alunos).filter(a => (!fUni || a.unidade === fUni) && (!fCat || a.categoria === fCat));
-        
         let stats = { pagNoMes: 0, emAtraso: 0, env: 0, pagTotal: 0 };
         lista.forEach(a => {
             const s = a.controleEnvio || 'Pendente';
-            if(s === 'Pago') stats.pagTotal++; 
-            if(s === 'Enviado') stats.env++;
-
+            if(s === 'Pago') stats.pagTotal++; if(s === 'Enviado') stats.env++;
             const mRef = a.mensalidades.find(m => m.mes === mesRef);
             if(mRef && mRef.pago) stats.pagNoMes++;
-
-            // Regra Inadimplência: Pago primeira do semestre (Jan ou Jul)
             const primeiraJan = a.mensalidades.find(m => m.mes === 1);
             const primeiraJul = a.mensalidades.find(m => m.mes === 7);
             const pagoPrimeira = (mesRef <= 6 && primeiraJan?.pago) || (mesRef >= 7 && primeiraJul?.pago);
-
             if(pagoPrimeira) {
-                const temAtraso = a.mensalidades.some(m => {
-                    const dataVenc = new Date(m.vencimento + 'T00:00:00');
-                    return !m.pago && dataVenc < hoje;
-                });
+                const temAtraso = a.mensalidades.some(m => { const dataVenc = new Date(m.vencimento + 'T00:00:00'); return !m.pago && dataVenc < hoje; });
                 if(temAtraso) stats.emAtraso++;
             }
         });
-
         document.getElementById('d-total').innerText = lista.length;
         document.getElementById('d-pag-mes').innerText = stats.pagNoMes;
         document.getElementById('d-atraso').innerText = stats.emAtraso;
         document.getElementById('d-env').innerText = stats.env;
-
         const f = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         document.getElementById('p-arr').innerText = f((stats.pagTotal * ticket) + (stats.env * ticket * 0.9));
         document.getElementById('p-med').innerText = f((stats.pagTotal * ticket) + (stats.env * ticket * 0.6));
@@ -307,7 +310,7 @@
     }
 
     window.resetarStatusEnvio = async function() {
-        if(!confirm("Deseja resetar o status de envio para Pendente? Isso não altera os meses pagos.")) return;
+        if(!confirm("Resetar status para Pendente?")) return;
         const listaParaReset = Object.values(window.alunos).filter(a => a.controleEnvio === 'Enviado' || a.controleEnvio === 'Número Inválido');
         const batch = writeBatch(db);
         listaParaReset.forEach(a => { batch.update(doc(db, "alunos", a.ra), { controleEnvio: 'Pendente' }); window.alunos[a.ra].controleEnvio = 'Pendente'; });
