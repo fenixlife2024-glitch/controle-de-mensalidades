@@ -77,9 +77,9 @@
     <div class="config-bar">
         <div class="input-group"><label>Semestre</label><select id="semestreSelect" class="form-control" onchange="carregarDados()"><option value="1">1º (Jan-Jun)</option><option value="2" selected>2º (Jul-Dez)</option></select></div>
         <div class="input-group"><label>Ano</label><input type="number" id="anoRef" class="form-control" value="2026"></div>
-        <div class="input-group"><label>Unidade</label><select id="filtroUnidade" class="form-control" onchange="renderizar()"><option value="">Todas</option></select></div>
-        <div class="input-group"><label>Categoria</label><select id="filtroCategoria" class="form-control" onchange="renderizar()"><option value="">Todas</option><option value="PTC">PTC</option><option value="Extranet">Extranet</option></select></div>
-        <div class="input-group"><label>Prazo 9% Off</label><input type="text" id="prazoCampanha" class="form-control" value="05/02"></div>
+        <div class="input-group"><label>Unidade</label><select id="filtroUnidade" class="form-control" onchange="renderizar(); renderizarPainel();"><option value="">Todas</option></select></div>
+        <div class="input-group"><label>Categoria</label><select id="filtroCategoria" class="form-control" onchange="renderizar(); renderizarPainel();"><option value="">Todas</option><option value="PTC">PTC</option><option value="Extranet">Extranet</option></select></div>
+        <div class="input-group"><label>Prazo 9% Off</label><input type="text" id="prazoCampanha" class="form-control" value="05/02" oninput="renderizar()"></div>
         <div class="input-group"><label style="color:var(--accent)">Importar Alunos</label><input type="file" id="csvInput" accept=".csv" class="form-control" onchange="importarCSV(this)"></div>
     </div>
 
@@ -178,7 +178,10 @@
         const b = document.getElementById('busca').value.toLowerCase();
         const fUni = document.getElementById('filtroUnidade').value;
         const fCat = document.getElementById('filtroCategoria').value;
+        
+        // CORREÇÃO: Ordem alfabética sempre garantida pelo .sort()
         const lista = Object.values(window.alunos).filter(a => (!fUni || a.unidade === fUni) && (!fCat || a.categoria === fCat) && (a.nome?.toLowerCase().includes(b) || a.ra.includes(b))).sort((x,y) => x.nome.localeCompare(y.nome));
+        
         t.innerHTML = '';
         lista.forEach(a => {
             const status = a.controleEnvio || 'Pendente';
@@ -207,7 +210,9 @@
 
     window.renderizarPainel = function() {
         const ticket = parseFloat(document.getElementById('ticketMedio').value) || 70;
-        const lista = Object.values(window.alunos);
+        const fUni = document.getElementById('filtroUnidade').value;
+        const fCat = document.getElementById('filtroCategoria').value;
+        const lista = Object.values(window.alunos).filter(a => (!fUni || a.unidade === fUni) && (!fCat || a.categoria === fCat));
         const st = { pag: 0, env: 0, inv: 0 };
         lista.forEach(a => {
             const s = a.controleEnvio || 'Pendente';
@@ -227,16 +232,19 @@
         const { jsPDF } = window.jspdf;
         const docPDF = new jsPDF();
         const ticket = parseFloat(document.getElementById('ticketMedio').value) || 70;
-        const lista = Object.values(window.alunos);
+        const fUni = document.getElementById('filtroUnidade').value;
+        const fCat = document.getElementById('filtroCategoria').value;
+        const lista = Object.values(window.alunos).filter(a => (!fUni || a.unidade === fUni) && (!fCat || a.categoria === fCat));
         const st = { pag: 0, env: 0, inv: 0 };
         lista.forEach(a => { const s = a.controleEnvio || 'Pendente'; if(s === 'Pago') st.pag++; else if(s === 'Enviado') st.env++; else if(s === 'Número Inválido') st.inv++; });
         docPDF.setFont("helvetica", "bold");
         docPDF.text("Relatório de Gestão de Cobrança", 14, 20);
         docPDF.setFontSize(10);
         docPDF.setFont("helvetica", "normal");
-        const textoCorpo = `Universo: ${lista.length} clientes | Ticket Médio: R$ ${ticket.toFixed(2)}\n\nO desempenho consolidado registra ${st.pag} recebimentos concretizados e ${st.env} envios realizados. Foi identificada uma perda potencial de R$ ${(st.inv * ticket).toLocaleString('pt-BR')} devido a contatos inoperantes.\n\n3. Análise Probabilística dos Grupos (Enviados):\nOtimista (90%): R$ ${(st.pag*ticket + st.env*ticket*0.9).toLocaleString('pt-BR')}\nModerado (60%): R$ ${(st.pag*ticket + st.env*ticket*0.6).toLocaleString('pt-BR')}\nConservador (30%): R$ ${(st.pag*ticket + st.env*ticket*0.3).toLocaleString('pt-BR')}`;
+        const filtroTexto = `Filtros Aplicados - Unidade: ${fUni || 'Todas'} | Categoria: ${fCat || 'Todas'}`;
+        const textoCorpo = `${filtroTexto}\n\nUniverso: ${lista.length} clientes | Ticket Médio: R$ ${ticket.toFixed(2)}\n\nO desempenho consolidado registra ${st.pag} recebimentos concretizados e ${st.env} envios realizados. Foi identificada uma perda potencial de R$ ${(st.inv * ticket).toLocaleString('pt-BR')} devido a contatos inoperantes.\n\n3. Análise Probabilística dos Grupos (Enviados):\nOtimista (90%): R$ ${(st.pag*ticket + st.env*ticket*0.9).toLocaleString('pt-BR')}\nModerado (60%): R$ ${(st.pag*ticket + st.env*ticket*0.6).toLocaleString('pt-BR')}\nConservador (30%): R$ ${(st.pag*ticket + st.env*ticket*0.3).toLocaleString('pt-BR')}`;
         docPDF.text(docPDF.splitTextToSize(textoCorpo, 180), 14, 30);
-        docPDF.save(`Relatorio_Diretoria.pdf`);
+        docPDF.save(`Relatorio_${fUni || 'Geral'}.pdf`);
     }
 
     window.trocarTela = function(id) { document.querySelectorAll('.view-container').forEach(v => v.classList.remove('view-active')); document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active')); document.getElementById(id).classList.add('view-active'); event.currentTarget.classList.add('active'); };
@@ -256,7 +264,54 @@
     window.alterarStatus = async function(ra, val) { window.alunos[ra].controleEnvio = val; await updateDoc(doc(db, "alunos", ra), { controleEnvio: val }); renderizar(); renderizarPainel(); };
     window.togglePagamento = async function(ra, idx) { window.alunos[ra].mensalidades[idx].pago = !window.alunos[ra].mensalidades[idx].pago; await setDoc(doc(db, "alunos", ra), window.alunos[ra]); renderizar(); renderizarPainel(); };
     function atualizarOpcoesFiltros() { const u = [...new Set(Object.values(window.alunos).map(a => a.unidade))].sort(); document.getElementById('filtroUnidade').innerHTML = '<option value="">Todas</option>' + u.map(x => `<option value="${x}">${x}</option>`).join(''); }
-    window.importarCSV = function(input) { if (!input.files[0]) return; const r = new FileReader(); r.onload = async (e) => { const l = e.target.result.split(/\r?\n/); const batch = writeBatch(db); const sem = document.getElementById('semestreSelect').value; const ano = document.getElementById('anoRef').value; const mI = sem=="1"?1:7; const mF = sem=="1"?6:12; for (let line of l) { const c = line.split(';'); if (!c[0] || c[0].toUpperCase().includes("RA")) continue; const ra = c[0].replace(/\D/g, ''); const m = []; for(let i=mI; i<=mF; i++) m.push({mes:i, ano:ano, pago:false, vencimento:`${ano}-${String(i).padStart(2,'0')}-10`}); batch.set(doc(db, "alunos", ra), { ra, nome: c[1]?.trim(), tel: c[2]?.replace(/\D/g,''), unidade: c[3]?.trim(), categoria: c[4]?.trim() || 'Extranet', controleEnvio: 'Pendente', mensalidades: m }); } await batch.commit(); location.reload(); }; r.readAsText(input.files[0]); };
+    
+    // CORREÇÃO: Função de Importação que ignora dados existentes
+    window.importarCSV = function(input) { 
+        if (!input.files[0]) return; 
+        const r = new FileReader(); 
+        r.onload = async (e) => { 
+            const l = e.target.result.split(/\r?\n/); 
+            const batch = writeBatch(db); 
+            const sem = document.getElementById('semestreSelect').value; 
+            const ano = document.getElementById('anoRef').value; 
+            const mI = sem=="1"?1:7; 
+            const mF = sem=="1"?6:12; 
+            let novos = 0;
+
+            for (let line of l) { 
+                const c = line.split(';'); 
+                if (!c[0] || c[0].toUpperCase().includes("RA")) continue; 
+                const ra = c[0].replace(/\D/g, ''); 
+                
+                // VERIFICAÇÃO: Se o RA já existe no sistema, ignora a linha do CSV
+                if (window.alunos[ra]) continue;
+
+                const m = []; 
+                for(let i=mI; i<=mF; i++) m.push({mes:i, ano:ano, pago:false, vencimento:`${ano}-${String(i).padStart(2,'0')}-10`}); 
+                
+                batch.set(doc(db, "alunos", ra), { 
+                    ra, 
+                    nome: c[1]?.trim(), 
+                    tel: c[2]?.replace(/\D/g,''), 
+                    unidade: c[3]?.trim(), 
+                    categoria: c[4]?.trim() || 'Extranet', 
+                    controleEnvio: 'Pendente', 
+                    mensalidades: m 
+                });
+                novos++;
+            } 
+            
+            if(novos > 0) {
+                await batch.commit(); 
+                alert(`${novos} novos alunos importados com sucesso! Alunos repetidos foram preservados.`);
+                location.reload(); 
+            } else {
+                alert("Nenhum aluno novo encontrado no arquivo. Todos os RAs já estão cadastrados.");
+            }
+        }; 
+        r.readAsText(input.files[0]); 
+    };
+
     window.excluirSelecionados = async () => { if (!confirm("Excluir selecionados?")) return; const batch = writeBatch(db); document.querySelectorAll('.chk-aluno:checked').forEach(chk => { const ra = chk.getAttribute('data-ra'); batch.delete(doc(db, "alunos", ra)); delete window.alunos[ra]; }); await batch.commit(); renderizar(); };
     window.toggleTodos = (el) => document.querySelectorAll('.chk-aluno').forEach(chk => chk.checked = el.checked);
 </script>
