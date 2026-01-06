@@ -41,6 +41,8 @@
         .modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
         .modal-content { background: white; padding: 25px; border-radius: 16px; width: 95%; max-width: 500px; }
         #login-screen { position: fixed; inset: 0; background: var(--primary); display: flex; justify-content: center; align-items: center; z-index: 2000; }
+        .star-icon { cursor: pointer; font-size: 18px; color: #cbd5e1; transition: 0.2s; }
+        .star-active { color: #f59e0b !important; }
     </style>
 </head>
 <body>
@@ -87,6 +89,13 @@
         </div>
         <div class="input-group"><label>Ano</label><input type="number" id="anoRef" class="form-control" value="2026"></div>
         <div class="input-group"><label>Unidade</label><select id="filtroUnidade" class="form-control" onchange="renderizar(); renderizarPainel();"><option value="">Todas</option></select></div>
+        <div class="input-group">
+            <label>Marcador ★</label>
+            <select id="filtroMarcado" class="form-control" onchange="renderizar()">
+                <option value="todos">Ver Todos</option>
+                <option value="marcados">Apenas Estrela ★</option>
+            </select>
+        </div>
         <div class="input-group"><label>Categoria</label><select id="filtroCategoria" class="form-control" onchange="renderizar(); renderizarPainel();"><option value="">Todas</option><option value="PTC">PTC</option><option value="Extranet">Extranet</option></select></div>
         <div class="input-group"><label>Prazo 9% Off</label><input type="text" id="prazoCampanha" class="form-control" value="05/02" oninput="renderizar()"></div>
         <div class="input-group"><label style="color:var(--accent)">Importar Alunos</label><input type="file" id="csvInput" accept=".csv" class="form-control" onchange="importarCSV(this)"></div>
@@ -96,7 +105,7 @@
     
     <div style="flex-grow:1; overflow:auto; background:white; border-radius:12px; border:1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
         <table>
-            <thead><tr><th style="width:20px;"><input type="checkbox" onclick="toggleTodos(this)"></th><th>RA</th><th>Nome do Aluno</th><th>Meses</th><th>Status</th><th>WhatsApp</th><th>Lembrete</th></tr></thead>
+            <thead><tr><th style="width:20px;"><input type="checkbox" onclick="toggleTodos(this)"></th><th style="width:30px;">★</th><th>RA</th><th>Nome do Aluno</th><th>Meses</th><th>Status</th><th>WhatsApp</th><th>Lembrete</th></tr></thead>
             <tbody id="corpoTabela"></tbody>
         </table>
     </div>
@@ -169,11 +178,9 @@
     function atualizarMesesReferencia() {
         const sem = document.getElementById('semestreSelect').value;
         const select = document.getElementById('mesRefDash');
-        
         let mI = 1, mF = 12;
         if(sem === "1") { mI = 1; mF = 6; }
         else if(sem === "2") { mI = 7; mF = 12; }
-
         select.innerHTML = '';
         for(let i=mI; i<=mF; i++) {
             const opt = document.createElement('option');
@@ -184,6 +191,7 @@
         }
     }
 
+    // --- LÓGICA DE MENSAGENS ORIGINAL ---
     function gerarTextoZap(aluno) {
         const hoje = new Date(); hoje.setHours(0,0,0,0);
         const mensalidade = aluno.mensalidades?.find(m => !m.pago);
@@ -191,6 +199,7 @@
         const dataVenc = new Date(mensalidade.vencimento + 'T00:00:00');
         const mesExtenso = nomesMesesLongos[mensalidade.mes];
         const anoRef = document.getElementById('anoRef').value;
+        
         if (hoje > dataVenc) {
             const diffDays = Math.ceil(Math.abs(hoje - dataVenc) / (1000 * 60 * 60 * 24));
             return `Olá ${aluno.nome}, tudo bem? Notamos que a sua mensalidade de ${mesExtenso} está em atraso há ${diffDays} dias. Precisamos regularizar sua situação no portal para evitar suspensão de serviços. Caso já tenha pago, desconsidere esta mensagem.`;
@@ -207,13 +216,26 @@
         return `Olá ${aluno.nome}, 🌟\n\nIdentificamos que você ainda não aproveitou o seu BENEFÍCIO de Pontualidade! \n\nEfetue o pagamento da sua mensalidade até o dia *${prazo}* e garanta automaticamente *9% de DESCONTO* no valor da parcela. \n\nAproveite para economizar! Qualquer dúvida, estamos à disposição.`;
     }
 
+    window.toggleMarcador = async function(ra) {
+        const novoStatus = !window.alunos[ra].marcado;
+        window.alunos[ra].marcado = novoStatus;
+        await updateDoc(doc(db, "alunos", ra), { marcado: novoStatus });
+        renderizar();
+    }
+
     window.renderizar = function() {
         const t = document.getElementById('corpoTabela');
         const b = document.getElementById('busca').value.toLowerCase();
         const fUni = document.getElementById('filtroUnidade').value;
         const fCat = document.getElementById('filtroCategoria').value;
+        const fMarcado = document.getElementById('filtroMarcado').value;
         
-        const lista = Object.values(window.alunos).filter(a => (!fUni || a.unidade === fUni) && (!fCat || a.categoria === fCat) && (a.nome?.toLowerCase().includes(b) || a.ra.includes(b))).sort((x,y) => x.nome.localeCompare(y.nome));
+        const lista = Object.values(window.alunos).filter(a => {
+            const matchFiltros = (!fUni || a.unidade === fUni) && (!fCat || a.categoria === fCat);
+            const matchBusca = (a.nome?.toLowerCase().includes(b) || a.ra.includes(b));
+            const matchMarcado = (fMarcado === 'todos' || (fMarcado === 'marcados' && a.marcado));
+            return matchFiltros && matchBusca && matchMarcado;
+        }).sort((x,y) => x.nome.localeCompare(y.nome));
         
         t.innerHTML = '';
         lista.forEach(a => {
@@ -222,6 +244,7 @@
             tr.className = status==='Pago'?'row-pago':status==='Enviado'?'row-enviado':status==='Número Inválido'?'row-invalido':'';
             tr.innerHTML = `
                 <td><input type="checkbox" class="chk-aluno" data-ra="${a.ra}"></td>
+                <td><span class="star-icon ${a.marcado ? 'star-active' : ''}" onclick="toggleMarcador('${a.ra}')">★</span></td>
                 <td>${a.ra}</td>
                 <td onclick="abrirModal('${a.ra}')" style="cursor:pointer; color:var(--accent); font-weight:700;">${a.nome}</td>
                 <td><div style="display:flex; gap:4px; flex-wrap:wrap; max-width:200px;">${a.mensalidades.map((m,i)=>`<div class="mes-box ${m.pago?'mes-pago':'mes-pendente'}" onclick="togglePagamento('${a.ra}',${i})">${m.mes}</div>`).join('')}</div></td>
@@ -247,11 +270,9 @@
         const fCat = document.getElementById('filtroCategoria').value;
         const mesRef = parseInt(document.getElementById('mesRefDash').value);
         const hoje = new Date(); hoje.setHours(0,0,0,0);
-
         const lista = Object.values(window.alunos).filter(a => (!fUni || a.unidade === fUni) && (!fCat || a.categoria === fCat));
         
         let stats = { pagNoMes: 0, emAtraso: 0, env: 0, pagTotal: 0 };
-
         lista.forEach(a => {
             const s = a.controleEnvio || 'Pendente';
             if(s === 'Pago') stats.pagTotal++; 
@@ -260,8 +281,12 @@
             const mRef = a.mensalidades.find(m => m.mes === mesRef);
             if(mRef && mRef.pago) stats.pagNoMes++;
 
-            const primeiraSem = a.mensalidades[0];
-            if(primeiraSem && primeiraSem.pago) {
+            // Regra Inadimplência: Pago primeira do semestre (Jan ou Jul)
+            const primeiraJan = a.mensalidades.find(m => m.mes === 1);
+            const primeiraJul = a.mensalidades.find(m => m.mes === 7);
+            const pagoPrimeira = (mesRef <= 6 && primeiraJan?.pago) || (mesRef >= 7 && primeiraJul?.pago);
+
+            if(pagoPrimeira) {
                 const temAtraso = a.mensalidades.some(m => {
                     const dataVenc = new Date(m.vencimento + 'T00:00:00');
                     return !m.pago && dataVenc < hoje;
@@ -275,79 +300,40 @@
         document.getElementById('d-atraso').innerText = stats.emAtraso;
         document.getElementById('d-env').innerText = stats.env;
 
-        const vP = stats.pagTotal * ticket; 
-        const vE = stats.env * ticket; 
         const f = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        
-        document.getElementById('p-arr').innerText = f(vP + (vE * 0.9));
-        document.getElementById('p-med').innerText = f(vP + (vE * 0.6));
-        document.getElementById('p-mod').innerText = f(vP + (vE * 0.3));
+        document.getElementById('p-arr').innerText = f((stats.pagTotal * ticket) + (stats.env * ticket * 0.9));
+        document.getElementById('p-med').innerText = f((stats.pagTotal * ticket) + (stats.env * ticket * 0.6));
+        document.getElementById('p-mod').innerText = f((stats.pagTotal * ticket) + (stats.env * ticket * 0.3));
     }
 
     window.resetarStatusEnvio = async function() {
-        if(!confirm("Deseja resetar o status de envio para Pendente?")) return;
+        if(!confirm("Deseja resetar o status de envio para Pendente? Isso não altera os meses pagos.")) return;
         const listaParaReset = Object.values(window.alunos).filter(a => a.controleEnvio === 'Enviado' || a.controleEnvio === 'Número Inválido');
-        if(listaParaReset.length === 0) return alert("Nenhum envio para resetar.");
-
         const batch = writeBatch(db);
-        listaParaReset.forEach(a => {
-            batch.update(doc(db, "alunos", a.ra), { controleEnvio: 'Pendente' });
-            window.alunos[a.ra].controleEnvio = 'Pendente';
-        });
-        await batch.commit();
-        renderizar();
-        renderizarPainel();
+        listaParaReset.forEach(a => { batch.update(doc(db, "alunos", a.ra), { controleEnvio: 'Pendente' }); window.alunos[a.ra].controleEnvio = 'Pendente'; });
+        await batch.commit(); renderizar(); renderizarPainel();
     }
 
-    window.importarCSV = function(input) { 
-        if (!input.files[0]) return; 
-        const r = new FileReader(); 
-        r.onload = async (e) => { 
-            const l = e.target.result.split(/\r?\n/); 
-            const batch = writeBatch(db); 
-            const sem = document.getElementById('semestreSelect').value; 
-            const ano = document.getElementById('anoRef').value; 
-            
-            let mI = 1, mF = 12;
-            if(sem === "1") { mI = 1; mF = 6; }
-            else if(sem === "2") { mI = 7; mF = 12; }
-
-            let novos = 0;
-            for (let line of l) { 
-                const c = line.split(';'); 
-                if (!c[0] || c[0].toUpperCase().includes("RA")) continue; 
-                const ra = c[0].replace(/\D/g, ''); 
-                if (window.alunos[ra]) continue;
-                const m = []; 
-                for(let i=mI; i<=mF; i++) m.push({mes:i, ano:ano, pago:false, vencimento:`${ano}-${String(i).padStart(2,'0')}-10`}); 
-                batch.set(doc(db, "alunos", ra), { 
-                    ra, nome: c[1]?.trim(), tel: c[2]?.replace(/\D/g,''), unidade: c[3]?.trim(), categoria: c[4]?.trim() || 'Extranet', controleEnvio: 'Pendente', mensalidades: m 
-                });
-                novos++;
-            } 
-            if(novos > 0) { await batch.commit(); alert(`${novos} novos alunos importados!`); location.reload(); }
-        }; 
-        r.readAsText(input.files[0]); 
-    };
-
-    window.trocarTela = function(id) { document.querySelectorAll('.view-container').forEach(v => v.classList.remove('view-active')); document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active')); document.getElementById(id).classList.add('view-active'); event.currentTarget.classList.add('active'); };
-    window.abrirModal = function(ra) {
-        const a = window.alunos[ra]; window.alunoAtivo = ra;
-        document.getElementById('mNome').innerText = a.nome;
-        document.getElementById('listaMensalidades').innerHTML = a.mensalidades.map((m, i) => `
-            <div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; padding:10px; border-radius:8px;">
-                <span style="font-size:12px; font-weight:bold;">${nomesMesesLongos[m.mes]}</span>
-                <input type="date" value="${m.vencimento}" class="form-control" style="width:140px;" onchange="atualizarVenc(${i}, this.value)">
-            </div>
-        `).join('');
-        document.getElementById('modal').style.display = 'flex';
-    };
-    window.atualizarVenc = async (i, val) => { window.alunos[window.alunoAtivo].mensalidades[i].vencimento = val; await setDoc(doc(db, "alunos", window.alunoAtivo), window.alunos[window.alunoAtivo]); renderizar(); };
+    window.trocarTela = (id) => { document.querySelectorAll('.view-container').forEach(v => v.classList.remove('view-active')); document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active')); document.getElementById(id).classList.add('view-active'); event.currentTarget.classList.add('active'); };
     window.fecharModal = () => document.getElementById('modal').style.display = 'none';
-    window.alterarStatus = async function(ra, val) { window.alunos[ra].controleEnvio = val; await updateDoc(doc(db, "alunos", ra), { controleEnvio: val }); renderizar(); renderizarPainel(); };
-    window.togglePagamento = async function(ra, idx) { window.alunos[ra].mensalidades[idx].pago = !window.alunos[ra].mensalidades[idx].pago; await setDoc(doc(db, "alunos", ra), window.alunos[ra]); renderizar(); renderizarPainel(); };
+    window.alterarStatus = async (ra, val) => { window.alunos[ra].controleEnvio = val; await updateDoc(doc(db, "alunos", ra), { controleEnvio: val }); renderizar(); renderizarPainel(); };
+    window.togglePagamento = async (ra, idx) => { window.alunos[ra].mensalidades[idx].pago = !window.alunos[ra].mensalidades[idx].pago; await setDoc(doc(db, "alunos", ra), window.alunos[ra]); renderizar(); renderizarPainel(); };
     function atualizarOpcoesFiltros() { const u = [...new Set(Object.values(window.alunos).map(a => a.unidade))].sort(); document.getElementById('filtroUnidade').innerHTML = '<option value="">Todas</option>' + u.map(x => `<option value="${x}">${x}</option>`).join(''); }
-    window.excluirSelecionados = async () => { if (!confirm("Excluir selecionados?")) return; const batch = writeBatch(db); document.querySelectorAll('.chk-aluno:checked').forEach(chk => { const ra = chk.getAttribute('data-ra'); batch.delete(doc(db, "alunos", ra)); delete window.alunos[ra]; }); await batch.commit(); renderizar(); };
+
+    window.importarCSV = function(input) { 
+        const r = new FileReader(); r.onload = async (e) => { 
+            const l = e.target.result.split(/\r?\n/); const batch = writeBatch(db); const sem = document.getElementById('semestreSelect').value; const ano = document.getElementById('anoRef').value;
+            let mI = sem==="1"?1:sem==="2"?7:1; let mF = sem==="1"?6:sem==="2"?12:12;
+            for (let line of l) { 
+                const c = line.split(';'); if (!c[0] || c[0].toUpperCase().includes("RA")) continue; const ra = c[0].replace(/\D/g, ''); 
+                if (window.alunos[ra]) continue; const m = []; for(let i=mI; i<=mF; i++) m.push({mes:i, ano:ano, pago:false, vencimento:`${ano}-${String(i).padStart(2,'0')}-10`}); 
+                batch.set(doc(db, "alunos", ra), { ra, nome: c[1]?.trim(), tel: c[2]?.replace(/\D/g,''), unidade: c[3]?.trim(), categoria: c[4]?.trim() || 'Extranet', controleEnvio: 'Pendente', mensalidades: m, marcado: false });
+            } 
+            await batch.commit(); location.reload();
+        }; r.readAsText(input.files[0]); 
+    };
+
+    window.excluirSelecionados = async () => { if (!confirm("Excluir?")) return; const batch = writeBatch(db); document.querySelectorAll('.chk-aluno:checked').forEach(chk => { const ra = chk.getAttribute('data-ra'); batch.delete(doc(db, "alunos", ra)); delete window.alunos[ra]; }); await batch.commit(); renderizar(); };
     window.toggleTodos = (el) => document.querySelectorAll('.chk-aluno').forEach(chk => chk.checked = el.checked);
 </script>
 </body>
