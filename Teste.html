@@ -1,1 +1,360 @@
 
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestão Financeira Acadêmica - Oficial</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        :root { --primary: #1e293b; --accent: #3b82f6; --success: #22c55e; --warning: #eab308; --danger: #ef4444; --bg: #f8fafc; --sidebar-w: 240px; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #334155; display: flex; height: 100vh; overflow: hidden; }
+        .sidebar { width: var(--sidebar-w); background: var(--primary); color: white; display: none; flex-direction: column; z-index: 1001; }
+        .sidebar-header { padding: 20px; font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 14px; text-transform: uppercase; }
+        .sidebar-menu { flex-grow: 1; padding: 10px 0; }
+        .menu-item { padding: 12px 20px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: 0.2s; font-size: 14px; }
+        .menu-item:hover, .menu-item.active { background: var(--accent); color: white; }
+        .view-container { flex-grow: 1; display: none; flex-direction: column; padding: 25px; overflow-y: auto; height: 100vh; box-sizing: border-box; }
+        .view-active { display: flex; }
+        .config-bar { background: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #e2e8f0; display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 12px; align-items: flex-end; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .input-group { display: flex; flex-direction: column; gap: 5px; }
+        label { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #64748b; }
+        .form-control { padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; outline: none; }
+        .dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 5px solid var(--accent); }
+        .card h4 { margin: 0 0 10px 0; font-size: 12px; color: #64748b; text-transform: uppercase; }
+        .card .val { font-size: 24px; font-weight: 800; color: var(--primary); }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; }
+        th { background: #f1f5f9; color: #475569; padding: 12px; text-align: left; font-size: 11px; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; position: sticky; top: 0; }
+        td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+        tr.row-pago { background-color: #f0fdf4 !important; }
+        tr.row-enviado { background-color: #fffbeb !important; }
+        tr.row-invalido { background-color: #fef2f2 !important; }
+        .mes-box { width: 24px; height: 24px; border-radius: 5px; border: 1px solid #cbd5e1; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: bold; cursor: pointer; }
+        .mes-pago { background: var(--success); color: white; border-color: #16a34a; }
+        .mes-pendente { background: #f1f5f9; color: #94a3b8; }
+        .btn { border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 11px; display: inline-flex; align-items: center; gap: 6px; transition: 0.2s; text-decoration: none; }
+        .btn-zap { background: #25D366; color: white; }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-warning { background: var(--warning); color: white; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
+        .modal-content { background: white; padding: 25px; border-radius: 16px; width: 95%; max-width: 500px; }
+        #login-screen { position: fixed; inset: 0; background: var(--primary); display: flex; justify-content: center; align-items: center; z-index: 2000; }
+        .star-icon { cursor: pointer; font-size: 18px; color: #cbd5e1; transition: 0.2s; }
+        .star-active { color: #f59e0b !important; }
+    </style>
+</head>
+<body>
+
+<div id="login-screen">
+    <div class="login-box" style="background:white; padding:40px; border-radius:16px; width:300px;">
+        <h2 style="text-align:center; margin-top:0;">Login</h2>
+        <input type="email" id="loginEmail" placeholder="E-mail" class="form-control" style="width:100%; margin-bottom:15px; box-sizing:border-box;">
+        <input type="password" id="loginPass" placeholder="Senha" class="form-control" style="width:100%; margin-bottom:20px; box-sizing:border-box;">
+        <button id="btnLogin" style="background:var(--accent); color:white; border:none; padding:12px; border-radius:8px; cursor:pointer; font-weight:bold; width:100%;">Entrar</button>
+    </div>
+</div>
+
+<div class="sidebar" id="mainSidebar">
+    <div class="sidebar-header">Fluxo de Cobrança</div>
+    <div class="sidebar-menu">
+        <div class="menu-item active" onclick="trocarTela('mainContainer')">📂 Operacional</div>
+        <div class="menu-item" onclick="trocarTela('painelGestao')">📊 Relatórios Direção</div>
+    </div>
+    <div style="padding: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+        <label style="color: #94a3b8; margin-bottom: 5px; display: block;">Ticket Médio (R$)</label>
+        <input type="number" id="ticketMedio" class="form-control" value="70" oninput="renderizarPainel()" style="background: #334155; color: white; border: 1px solid #475569; width: 100%;">
+    </div>
+</div>
+
+<div class="view-container view-active" id="mainContainer">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
+        <h1 style="margin:0; font-size: 22px; font-weight: 800;">Painel de Cobrança</h1>
+        <div style="display:flex; gap:10px; align-items:center;">
+            <button onclick="resetarStatusEnvio()" class="btn btn-warning">🔄 Resetar Status</button>
+            <button onclick="excluirSelecionados()" class="btn btn-danger">🗑️ Deletar Seleção</button>
+            <span id="contador" style="font-weight:700; color:var(--accent); font-size:12px; background:#e0f2fe; padding:5px 10px; border-radius:20px;">Sincronizando...</span>
+        </div>
+    </div>
+    
+    <div class="config-bar">
+        <div class="input-group">
+            <label>Período</label>
+            <select id="semestreSelect" class="form-control" onchange="carregarDados()">
+                <option value="all">Ano Completo (Jan-Dez)</option>
+                <option value="1">1º Semestre (Jan-Jun)</option>
+                <option value="2">2º Semestre (Jul-Dez)</option>
+            </select>
+        </div>
+        <div class="input-group"><label>Ano</label><input type="number" id="anoRef" class="form-control" value="2026"></div>
+        <div class="input-group"><label>Unidade</label><select id="filtroUnidade" class="form-control" onchange="renderizar(); renderizarPainel();"><option value="">Todas</option></select></div>
+        
+        <div class="input-group">
+            <label>Status Operacional</label>
+            <select id="filtroStatusEnvio" class="form-control" onchange="renderizar()">
+                <option value="todos">Todos os Status</option>
+                <option value="Pendente">⏳ Apenas Pendentes</option>
+                <option value="Enviado">📤 Apenas Enviados</option>
+                <option value="Pago">✅ Apenas Pagos</option>
+                <option value="Número Inválido">🚫 Números Inválidos</option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label>Marcador ★</label>
+            <select id="filtroMarcado" class="form-control" onchange="renderizar()">
+                <option value="todos">Ver Todos</option>
+                <option value="marcados">Apenas Estrela ★</option>
+            </select>
+        </div>
+        <div class="input-group"><label>Categoria</label><select id="filtroCategoria" class="form-control" onchange="renderizar(); renderizarPainel();"><option value="">Todas</option><option value="PTC">PTC</option><option value="Extranet">Extranet</option></select></div>
+        <div class="input-group"><label>Prazo 9% Off</label><input type="text" id="prazoCampanha" class="form-control" value="05/02" oninput="renderizar()"></div>
+        <div class="input-group"><label style="color:var(--accent)">Importar Alunos</label><input type="file" id="csvInput" accept=".csv" class="form-control" onchange="importarCSV(this)"></div>
+    </div>
+
+    <input type="text" id="busca" placeholder="Pesquisar por nome ou RA..." class="form-control" style="width:100%; margin-bottom:15px; padding:12px;" onkeyup="renderizar()">
+    
+    <div style="flex-grow:1; overflow:auto; background:white; border-radius:12px; border:1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+        <table>
+            <thead><tr><th style="width:20px;"><input type="checkbox" onclick="toggleTodos(this)"></th><th style="width:30px;">★</th><th>RA</th><th>Nome do Aluno</th><th>Meses</th><th>Status</th><th>WhatsApp</th><th>Lembrete</th></tr></thead>
+            <tbody id="corpoTabela"></tbody>
+        </table>
+    </div>
+</div>
+
+<div class="view-container" id="painelGestao">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 25px;">
+        <h1 style="margin:0; font-size: 22px; font-weight: 800;">Relatórios Executivos</h1>
+        <div style="display:flex; gap:10px; align-items:flex-end;">
+            <div class="input-group">
+                <label>Mês de Referência</label>
+                <select id="mesRefDash" class="form-control" onchange="renderizarPainel()"></select>
+            </div>
+            <button onclick="gerarRelatorioPDF()" class="btn btn-primary" style="padding:12px 25px; font-size:13px;">📄 Gerar PDF para Diretoria</button>
+        </div>
+    </div>
+    <div class="dash-grid">
+        <div class="card"><h4>Universo de Clientes</h4><span class="val" id="d-total">0</span></div>
+        <div class="card" style="border-left-color: var(--success)"><h4>Pagos no Mês Ref.</h4><span class="val" id="d-pag-mes">0</span></div>
+        <div class="card" style="border-left-color: var(--danger)"><h4>Em Atraso (Ativos)</h4><span class="val" id="d-atraso">0</span></div>
+        <div class="card" style="border-left-color: var(--warning)"><h4>Documentos Enviados</h4><span class="val" id="d-env">0</span></div>
+    </div>
+    <div class="card" style="margin-top:20px; border-left-color: var(--primary)">
+        <h4 style="margin-bottom:15px;">Prévia da Receita (Cenários Probabilísticos)</h4>
+        <div style="display:flex; gap:30px;">
+            <div><label>Otimista</label><div class="val" id="p-arr" style="color:var(--success)">R$ 0,00</div></div>
+            <div><label>Moderado</label><div class="val" id="p-med" style="color:var(--accent)">R$ 0,00</div></div>
+            <div><label>Conservador</label><div class="val" id="p-mod" style="color:var(--warning)">R$ 0,00</div></div>
+        </div>
+    </div>
+</div>
+
+<div id="modal" class="modal">
+    <div class="modal-content">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3 id="mNome" style="margin:0; font-size:18px;"></h3>
+            <button onclick="fecharModal()" style="border:none; background:none; cursor:pointer; font-size:28px; color:#94a3b8;">&times;</button>
+        </div>
+        <label style="margin-bottom:10px; display:block; font-weight:bold;">Editar Vencimentos:</label>
+        <div id="listaMensalidades" style="display:flex; flex-direction:column; gap:10px;"></div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, doc, setDoc, getDocs, collection, updateDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+    const firebaseConfig = { apiKey: "AIzaSyC4_dlIiCaNHtj7eWB4kW200vnO6AuuuTA", authDomain: "reguacobranca.firebaseapp.com", projectId: "reguacobranca", storageBucket: "reguacobranca.firebasestorage.app", messagingSenderId: "85201788796", appId: "1:85201788796:web:25cf11a726cec89d248ef9" };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    window.alunos = {};
+    const nomesMesesLongos = ["", "JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO", "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO"];
+
+    onAuthStateChanged(auth, user => { if (user) { document.getElementById('login-screen').style.display='none'; document.getElementById('mainSidebar').style.display='flex'; document.getElementById('mainContainer').style.display='flex'; carregarDados(); } });
+    document.getElementById('btnLogin').addEventListener('click', async () => { try { await signInWithEmailAndPassword(auth, document.getElementById('loginEmail').value, document.getElementById('loginPass').value); } catch(e) { alert("Acesso Negado"); } });
+
+    async function carregarDados() {
+        const snap = await getDocs(collection(db, "alunos"));
+        window.alunos = {};
+        snap.forEach(doc => { window.alunos[doc.id] = doc.data(); });
+        atualizarOpcoesFiltros();
+        atualizarMesesReferencia();
+        renderizar();
+        renderizarPainel();
+    }
+
+    function atualizarMesesReferencia() {
+        const sem = document.getElementById('semestreSelect').value;
+        const select = document.getElementById('mesRefDash');
+        let mI = 1, mF = 12;
+        if(sem === "1") { mI = 1; mF = 6; }
+        else if(sem === "2") { mI = 7; mF = 12; }
+        select.innerHTML = '';
+        for(let i=mI; i<=mF; i++) {
+            const opt = document.createElement('option');
+            opt.value = i;
+            opt.innerText = nomesMesesLongos[i];
+            if(new Date().getMonth()+1 === i) opt.selected = true;
+            select.appendChild(opt);
+        }
+    }
+
+    window.abrirModal = function(ra) {
+        const aluno = window.alunos[ra];
+        document.getElementById('mNome').innerText = aluno.nome;
+        const lista = document.getElementById('listaMensalidades');
+        lista.innerHTML = '';
+        aluno.mensalidades.forEach((m, idx) => {
+            const div = document.createElement('div');
+            div.style = 'display:flex; justify-content:space-between; align-items:center; padding:5px; border-bottom:1px solid #f1f5f9;';
+            div.innerHTML = `<span style="font-size:13px; font-weight:600;">Mês ${m.mes}</span>
+                             <input type="date" value="${m.vencimento}" onchange="atualizarVencimento('${ra}', ${idx}, this.value)" class="form-control" style="width:150px;">`;
+            lista.appendChild(div);
+        });
+        document.getElementById('modal').style.display = 'flex';
+    }
+
+    window.atualizarVencimento = async (ra, idx, data) => {
+        window.alunos[ra].mensalidades[idx].vencimento = data;
+        await setDoc(doc(db, "alunos", ra), window.alunos[ra]);
+    };
+
+    function gerarTextoZap(aluno) {
+        const hoje = new Date(); hoje.setHours(0,0,0,0);
+        const mensalidade = aluno.mensalidades?.find(m => !m.pago);
+        if (!mensalidade) return `Olá ${aluno.nome}, identificamos que você está em dia com suas mensalidades!`;
+        const dataVenc = new Date(mensalidade.vencimento + 'T00:00:00');
+        const mesExtenso = nomesMesesLongos[mensalidade.mes];
+        const anoRef = document.getElementById('anoRef').value;
+        if (hoje > dataVenc) {
+            const diffDays = Math.ceil(Math.abs(hoje - dataVenc) / (1000 * 60 * 60 * 24));
+            return `Olá ${aluno.nome}, tudo bem? Notamos que a sua mensalidade de ${mesExtenso} está em atraso há ${diffDays} dias. Precisamos regularizar sua situação no portal para evitar suspensão de serviços. Caso já tenha pago, desconsidere esta mensagem.`;
+        }
+        if (mensalidade.mes === 1 || mensalidade.mes === 7) {
+            const sem = mensalidade.mes === 1 ? '1' : '2';
+            return `🚀 Olá ${aluno.nome}, Não Pare de Evoluir!\n\nSua próxima conquista está esperando! A rematrícula ${anoRef}.${sem} já está liberada.\n\n👉 Pague o Boleto de ${mesExtenso} anexo e automaticamente ative sua vaga!\n\nNão deixe para a última hora. Vamos juntos para ${anoRef}! 🚀`;
+        }
+        return `Olá ${aluno.nome}, tudo bem? \n\n🚀Passando para informar que o boleto de ${mesExtenso} está disponível em sua plataforma. \n\n👉Siga as orientações: \n👉Clique no ítem financeiro; \n👉Mensalidades e serviços; \n👉Selecione Pagar; Escolha Boleto, Pix ou Cartão. \n\n👉Dúvidas? Tutorial: https://www.youtube.com/watch?v=vcaDMgU-yg0`;
+    }
+
+    function gerarTexto9Off(aluno) {
+        const prazo = document.getElementById('prazoCampanha').value;
+        return `Olá ${aluno.nome}, 🌟\n\nIdentificamos que você ainda não aproveitou o seu BENEFÍCIO de Pontualidade! \n\nEfetue o pagamento da sua mensalidade até o dia *${prazo}* e garanta automaticamente *9% de DESCONTO* no valor da parcela. \n\nAproveite para economizar! Qualquer dúvida, estamos à disposição.`;
+    }
+
+    window.toggleMarcador = async function(ra) {
+        const novoStatus = !window.alunos[ra].marcado;
+        window.alunos[ra].marcado = novoStatus;
+        await updateDoc(doc(db, "alunos", ra), { marcado: novoStatus });
+        renderizar();
+    }
+
+    window.renderizar = function() {
+        const t = document.getElementById('corpoTabela');
+        const b = document.getElementById('busca').value.toLowerCase();
+        const fUni = document.getElementById('filtroUnidade').value;
+        const fCat = document.getElementById('filtroCategoria').value;
+        const fMarcado = document.getElementById('filtroMarcado').value;
+        const fStatus = document.getElementById('filtroStatusEnvio').value;
+        const lista = Object.values(window.alunos).filter(a => {
+            const status = a.controleEnvio || 'Pendente';
+            const matchFiltros = (!fUni || a.unidade === fUni) && (!fCat || a.categoria === fCat);
+            const matchBusca = (a.nome?.toLowerCase().includes(b) || a.ra.includes(b));
+            const matchMarcado = (fMarcado === 'todos' || (fMarcado === 'marcados' && a.marcado));
+            const matchStatusEnvio = (fStatus === 'todos' || status === fStatus);
+            return matchFiltros && matchBusca && matchMarcado && matchStatusEnvio;
+        }).sort((x,y) => x.nome.localeCompare(y.nome));
+        t.innerHTML = '';
+        lista.forEach(a => {
+            const status = a.controleEnvio || 'Pendente';
+            const tr = document.createElement('tr');
+            tr.className = status==='Pago'?'row-pago':status==='Enviado'?'row-enviado':status==='Número Inválido'?'row-invalido':'';
+            tr.innerHTML = `
+                <td><input type="checkbox" class="chk-aluno" data-ra="${a.ra}"></td>
+                <td><span class="star-icon ${a.marcado ? 'star-active' : ''}" onclick="toggleMarcador('${a.ra}')">★</span></td>
+                <td>${a.ra}</td>
+                <td onclick="abrirModal('${a.ra}')" style="cursor:pointer; color:var(--accent); font-weight:700;">${a.nome}</td>
+                <td><div style="display:flex; gap:4px; flex-wrap:wrap; max-width:200px;">${a.mensalidades.map((m,i)=>`<div class="mes-box ${m.pago?'mes-pago':'mes-pendente'}" onclick="togglePagamento('${a.ra}',${i})">${m.mes}</div>`).join('')}</div></td>
+                <td>
+                    <select class="form-control" onchange="alterarStatus('${a.ra}', this.value)" style="font-size:10px; height:30px;">
+                        <option value="Pendente" ${status==='Pendente'?'selected':''}>⏳ Pendente</option>
+                        <option value="Enviado" ${status==='Enviado'?'selected':''}>📤 Enviado</option>
+                        <option value="Pago" ${status==='Pago'?'selected':''}>✅ Pago</option>
+                        <option value="Número Inválido" ${status==='Número Inválido'?'selected':''}>🚫 Inválido</option>
+                    </select>
+                </td>
+                <td><a class="btn btn-zap" href="https://wa.me/55${a.tel}?text=${encodeURIComponent(gerarTextoZap(a))}" target="_blank" onclick="alterarStatus('${a.ra}', 'Enviado')">📱 Enviar</a></td>
+                <td><a class="btn" style="background:#8b5cf6; color:white;" href="https://wa.me/55${a.tel}?text=${encodeURIComponent(gerarTexto9Off(a))}" target="_blank">💎 9% Off</a></td>`;
+            t.appendChild(tr);
+        });
+        document.getElementById('contador').innerText = `${lista.length} Clientes`;
+    }
+
+    window.renderizarPainel = function() {
+        const ticket = parseFloat(document.getElementById('ticketMedio').value) || 70;
+        const fUni = document.getElementById('filtroUnidade').value;
+        const fCat = document.getElementById('filtroCategoria').value;
+        const mesRef = parseInt(document.getElementById('mesRefDash').value);
+        const hoje = new Date(); hoje.setHours(0,0,0,0);
+        const lista = Object.values(window.alunos).filter(a => (!fUni || a.unidade === fUni) && (!fCat || a.categoria === fCat));
+        let stats = { pagNoMes: 0, emAtraso: 0, env: 0, pagTotal: 0 };
+        lista.forEach(a => {
+            const s = a.controleEnvio || 'Pendente';
+            if(s === 'Pago') stats.pagTotal++; if(s === 'Enviado') stats.env++;
+            const mRef = a.mensalidades.find(m => m.mes === mesRef);
+            if(mRef && mRef.pago) stats.pagNoMes++;
+            const primeiraJan = a.mensalidades.find(m => m.mes === 1);
+            const primeiraJul = a.mensalidades.find(m => m.mes === 7);
+            const pagoPrimeira = (mesRef <= 6 && primeiraJan?.pago) || (mesRef >= 7 && primeiraJul?.pago);
+            if(pagoPrimeira) {
+                const temAtraso = a.mensalidades.some(m => { const dataVenc = new Date(m.vencimento + 'T00:00:00'); return !m.pago && dataVenc < hoje; });
+                if(temAtraso) stats.emAtraso++;
+            }
+        });
+        document.getElementById('d-total').innerText = lista.length;
+        document.getElementById('d-pag-mes').innerText = stats.pagNoMes;
+        document.getElementById('d-atraso').innerText = stats.emAtraso;
+        document.getElementById('d-env').innerText = stats.env;
+        const f = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        document.getElementById('p-arr').innerText = f((stats.pagTotal * ticket) + (stats.env * ticket * 0.9));
+        document.getElementById('p-med').innerText = f((stats.pagTotal * ticket) + (stats.env * ticket * 0.6));
+        document.getElementById('p-mod').innerText = f((stats.pagTotal * ticket) + (stats.env * ticket * 0.3));
+    }
+
+    window.resetarStatusEnvio = async function() {
+        if(!confirm("Resetar status para Pendente?")) return;
+        const listaParaReset = Object.values(window.alunos).filter(a => a.controleEnvio === 'Enviado' || a.controleEnvio === 'Número Inválido');
+        const batch = writeBatch(db);
+        listaParaReset.forEach(a => { batch.update(doc(db, "alunos", a.ra), { controleEnvio: 'Pendente' }); window.alunos[a.ra].controleEnvio = 'Pendente'; });
+        await batch.commit(); renderizar(); renderizarPainel();
+    }
+
+    window.trocarTela = (id) => { document.querySelectorAll('.view-container').forEach(v => v.classList.remove('view-active')); document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active')); document.getElementById(id).classList.add('view-active'); event.currentTarget.classList.add('active'); };
+    window.fecharModal = () => document.getElementById('modal').style.display = 'none';
+    window.alterarStatus = async (ra, val) => { window.alunos[ra].controleEnvio = val; await updateDoc(doc(db, "alunos", ra), { controleEnvio: val }); renderizar(); renderizarPainel(); };
+    window.togglePagamento = async (ra, idx) => { window.alunos[ra].mensalidades[idx].pago = !window.alunos[ra].mensalidades[idx].pago; await setDoc(doc(db, "alunos", ra), window.alunos[ra]); renderizar(); renderizarPainel(); };
+    function atualizarOpcoesFiltros() { const u = [...new Set(Object.values(window.alunos).map(a => a.unidade))].sort(); document.getElementById('filtroUnidade').innerHTML = '<option value="">Todas</option>' + u.map(x => `<option value="${x}">${x}</option>`).join(''); }
+
+    window.importarCSV = function(input) { 
+        const r = new FileReader(); r.onload = async (e) => { 
+            const l = e.target.result.split(/\r?\n/); const batch = writeBatch(db); const sem = document.getElementById('semestreSelect').value; const ano = document.getElementById('anoRef').value;
+            let mI = sem==="1"?1:sem==="2"?7:1; let mF = sem==="1"?6:sem==="2"?12:12;
+            for (let line of l) { 
+                const c = line.split(';'); if (!c[0] || c[0].toUpperCase().includes("RA")) continue; const ra = c[0].replace(/\D/g, ''); 
+                if (window.alunos[ra]) continue; const m = []; for(let i=mI; i<=mF; i++) m.push({mes:i, ano:ano, pago:false, vencimento:`${ano}-${String(i).padStart(2,'0')}-10`}); 
+                batch.set(doc(db, "alunos", ra), { ra, nome: c[1]?.trim(), tel: c[2]?.replace(/\D/g,''), unidade: c[3]?.trim(), categoria: c[4]?.trim() || 'Extranet', controleEnvio: 'Pendente', mensalidades: m, marcado: false });
+            } 
+            await batch.commit(); location.reload();
+        }; r.readAsText(input.files[0]); 
+    };
+
+    window.excluirSelecionados = async () => { if (!confirm("Excluir?")) return; const batch = writeBatch(db); document.querySelectorAll('.chk-aluno:checked').forEach(chk => { const ra = chk.getAttribute('data-ra'); batch.delete(doc(db, "alunos", ra)); delete window.alunos[ra]; }); await batch.commit(); renderizar(); };
+    window.toggleTodos = (el) => document.querySelectorAll('.chk-aluno').forEach(chk => chk.checked = el.checked);
+</script>
+</body>
+</html>
