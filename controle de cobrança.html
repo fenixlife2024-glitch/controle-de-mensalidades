@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Cobrança Pro - Firebase Real</title>
+    <title>Sistema de Cobrança Pro - Firebase Oficial</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -19,10 +19,10 @@
 
     <div id="login-screen">
         <div class="bg-white p-8 rounded-xl w-80 text-slate-900 shadow-2xl text-center">
-            <h2 class="font-bold text-xl mb-4 text-orange">SISTEMA COBRANÇA</h2>
-            <input type="email" id="loginEmail" placeholder="E-mail" class="w-full p-2 border rounded mb-3 outline-none focus:border-orange">
-            <input type="password" id="loginPass" placeholder="Senha" class="w-full p-2 border rounded mb-4 outline-none focus:border-orange">
-            <button id="btnLogin" class="w-full bg-orange text-white font-bold py-2 rounded uppercase italic">Acessar Banco</button>
+            <h2 class="font-bold text-xl mb-4 text-orange italic">SISTEMA COBRANÇA</h2>
+            <input type="email" id="loginEmail" placeholder="E-mail" class="w-full p-2 border rounded mb-3 outline-none">
+            <input type="password" id="loginPass" placeholder="Senha" class="w-full p-2 border rounded mb-4 outline-none">
+            <button id="btnLogin" class="w-full bg-orange text-white font-bold py-2 rounded uppercase">Acessar Banco</button>
         </div>
     </div>
 
@@ -31,27 +31,29 @@
             <h1 class="text-2xl font-bold text-orange mb-8 text-center italic">SISTEMA <span class="text-white">COBRANÇA</span></h1>
             <nav class="space-y-4">
                 <button onclick="renderizarTabela()" class="w-full text-left p-3 rounded bg-orange text-white font-bold shadow-lg shadow-orange/20"><i class="fas fa-home mr-2"></i> Dashboard</button>
-                <button onclick="openModal('modalAluno')" class="w-full text-left p-3 rounded hover:bg-slate-700 transition text-sm font-bold"><i class="fas fa-plus mr-2"></i> Novo Aluno</button>
+                <button onclick="openModal('modalAluno')" class="w-full text-left p-3 rounded hover:bg-slate-700 transition"><i class="fas fa-plus mr-2"></i> Novo Aluno</button>
             </nav>
             <div class="mt-10">
                 <label class="text-xs uppercase text-gray-500 font-black">Filtrar Unidade</label>
                 <select id="filtroUnidade" onchange="renderizarTabela()" class="w-full mt-2 bg-slate-800 border border-gray-600 p-2 rounded text-sm outline-none">
                     <option value="Todas">Todas as Unidades</option>
-                    <option value="Recife">Recife</option><option value="Carpina">Carpina</option>
-                    <option value="Gravatá">Gravatá</option><option value="Bezerros">Bezerros</option>
+                    <option value="Recife">Recife</option>
+                    <option value="Carpina">Carpina</option>
+                    <option value="Gravatá">Gravatá</option>
+                    <option value="Bezerros">Bezerros</option>
                     <option value="Amaraji">Amaraji</option>
                 </select>
             </div>
         </aside>
 
         <main class="flex-1 p-8">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 text-center">
-                <div class="bg-dark-blue p-5 rounded-lg border-b-4 border-orange">
-                    <p class="text-gray-400 text-xs uppercase font-bold text-center">Acordos Fechados</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                <div class="bg-dark-blue p-5 rounded-lg border-b-4 border-orange text-center">
+                    <p class="text-gray-400 text-xs uppercase font-bold">Acordos Fechados</p>
                     <h3 id="cardFechados" class="text-3xl font-black text-orange">0</h3>
                 </div>
-                <div class="bg-dark-blue p-5 rounded-lg border-b-4 border-blue-500">
-                    <p class="text-gray-400 text-xs uppercase font-bold text-center">Propostas Enviadas</p>
+                <div class="bg-dark-blue p-5 rounded-lg border-b-4 border-blue-500 text-center">
+                    <p class="text-gray-400 text-xs uppercase font-bold">Propostas Enviadas</p>
                     <h3 id="cardEnviados" class="text-3xl font-black text-blue-400">0</h3>
                 </div>
             </div>
@@ -59,7 +61,7 @@
             <div class="bg-dark-blue rounded shadow-2xl overflow-hidden border border-gray-800">
                 <div class="p-4 border-b border-gray-700 flex justify-between items-center bg-slate-800/30">
                     <h2 class="font-bold text-lg">Negociações em Aberto</h2>
-                    <input type="text" id="buscaGeral" onkeyup="renderizarTabela()" placeholder="Buscar nome ou CPF..." class="bg-slate-900 border border-gray-700 p-2 rounded text-sm w-72 outline-none focus:border-orange">
+                    <input type="text" id="buscaGeral" onkeyup="renderizarTabela()" placeholder="Buscar nome ou CPF..." class="bg-slate-900 border border-gray-700 p-2 rounded text-sm w-72 outline-none">
                 </div>
                 <table class="w-full text-left">
                     <thead class="bg-slate-800 text-xs uppercase text-gray-400 font-black">
@@ -78,51 +80,54 @@
     </div>
 
     <div id="modalAluno" class="fixed inset-0 bg-black/80 hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-dark-blue w-full max-w-md p-6 rounded-lg border border-gray-700 shadow-2xl">
-            <h2 class="text-xl font-bold text-orange mb-4 italic">Novo Aluno</h2>
+        <div class="bg-dark-blue w-full max-w-md p-6 rounded-lg border border-gray-700">
+            <h2 class="text-xl font-bold text-orange mb-4">Novo Aluno</h2>
             <form id="formAluno" class="space-y-4">
-                <input type="text" id="nome" placeholder="Nome Completo" required class="w-full bg-slate-900 border border-gray-700 p-2 rounded mt-1 uppercase outline-none focus:border-orange">
+                <input type="text" id="nome" placeholder="Nome do Aluno" required class="w-full bg-slate-900 border border-gray-700 p-2 rounded uppercase outline-none">
                 <div class="grid grid-cols-2 gap-4">
-                    <input type="text" id="cpf" placeholder="CPF" required class="w-full bg-slate-900 border border-gray-700 p-2 rounded outline-none focus:border-orange">
-                    <input type="text" id="tel" placeholder="WhatsApp" required class="w-full bg-slate-900 border border-gray-700 p-2 rounded outline-none focus:border-orange">
+                    <input type="text" id="cpf" placeholder="CPF: 000.000.000-00" oninput="maskCPF(this)" maxlength="14" required class="w-full bg-slate-900 border border-gray-700 p-2 rounded outline-none">
+                    <input type="text" id="tel" placeholder="WhatsApp" oninput="maskTel(this)" maxlength="15" required class="w-full bg-slate-900 border border-gray-700 p-2 rounded outline-none">
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <select id="unidade" class="w-full bg-slate-900 border border-gray-700 p-2 rounded outline-none">
-                        <option value="Recife">Recife</option><option value="Carpina">Carpina</option>
-                        <option value="Gravatá">Gravatá</option><option value="Bezerros">Bezerros</option>
+                        <option value="Recife">Recife</option>
+                        <option value="Carpina">Carpina</option>
+                        <option value="Gravatá">Gravatá</option>
+                        <option value="Bezerros">Bezerros</option>
                         <option value="Amaraji">Amaraji</option>
                     </select>
                     <select id="tipo" class="w-full bg-slate-900 border border-gray-700 p-2 rounded outline-none">
-                        <option value="Extranet">Extranet</option><option value="PTC">PTC</option>
+                        <option value="Extranet">Extranet</option>
+                        <option value="PTC">PTC</option>
                     </select>
                 </div>
                 <div class="flex justify-end gap-3 pt-4 border-t border-gray-800">
                     <button type="button" onclick="closeModal('modalAluno')" class="text-gray-400 font-bold">Cancelar</button>
-                    <button type="submit" class="bg-orange px-6 py-2 rounded font-black text-white uppercase text-sm shadow-lg">Salvar</button>
+                    <button type="submit" class="bg-orange px-6 py-2 rounded font-black text-white uppercase text-sm">Salvar Aluno</button>
                 </div>
             </form>
         </div>
     </div>
 
     <div id="modalAcordo" class="fixed inset-0 bg-black/80 hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-dark-blue w-full max-w-md p-6 rounded-lg border-2 border-orange shadow-2xl">
-            <h2 class="text-xl font-bold text-orange mb-1 italic">Gerar Acordo</h2>
-            <p id="nomeAlunoAcordo" class="text-xs text-gray-400 mb-6 font-bold uppercase"></p>
+        <div class="bg-dark-blue w-full max-w-md p-6 rounded-lg border-2 border-orange">
+            <h2 class="text-xl font-bold text-orange mb-1">Gerar Acordo</h2>
+            <p id="nomeAlunoAcordo" class="text-xs text-gray-400 mb-6"></p>
             <div class="space-y-4">
                 <input type="text" id="valorAVista" onkeyup="maskDinheiro(this)" placeholder="Valor À Vista R$ 0,00" class="w-full bg-slate-900 border border-gray-700 p-2 rounded text-orange font-bold outline-none">
-                <input type="text" id="valorAcordo" onkeyup="maskDinheiro(this)" placeholder="Valor Total Boleto R$ 0,00" class="w-full bg-slate-900 border border-gray-700 p-2 rounded font-bold outline-none focus:border-orange">
+                <input type="text" id="valorAcordo" onkeyup="maskDinheiro(this)" placeholder="Valor Total Boleto R$ 0,00" class="w-full bg-slate-900 border border-gray-700 p-2 rounded font-bold outline-none">
                 <div class="grid grid-cols-3 gap-2">
                     <input type="text" id="entrada" onkeyup="maskDinheiro(this)" placeholder="Entrada" class="w-full bg-slate-900 border border-gray-700 p-2 rounded outline-none">
                     <input type="number" id="numParcelas" value="1" class="w-full bg-slate-900 border border-gray-700 p-2 rounded outline-none">
                     <input type="text" id="vlrParcelaManual" onkeyup="maskDinheiro(this)" placeholder="Vlr Parcela" class="w-full bg-slate-900 border border-gray-700 p-2 rounded outline-none text-orange font-bold">
                 </div>
                 <div class="flex items-center gap-2 bg-slate-800 p-3 rounded">
-                    <input type="checkbox" id="checkRematricula" class="w-5 h-5 accent-orange cursor-pointer">
-                    <label for="checkRematricula" class="text-sm font-bold cursor-pointer">Incluir Rematrícula (Emocional)</label>
+                    <input type="checkbox" id="checkRematricula" class="w-5 h-5 accent-orange">
+                    <label for="checkRematricula" class="text-sm font-bold">Incluir Rematrícula (Emocional)</label>
                 </div>
                 <div class="flex justify-between gap-3 pt-4">
                     <button type="button" onclick="closeModal('modalAcordo')" class="text-gray-400 font-bold">Cancelar</button>
-                    <button onclick="gerarEnviar()" class="bg-orange px-8 py-3 rounded font-black text-white uppercase text-xs shadow-lg shadow-orange/20">Gerar e Enviar Zap</button>
+                    <button onclick="gerarEnviar()" class="bg-orange px-8 py-3 rounded font-black text-white uppercase text-xs">Gerar e Enviar Zap</button>
                 </div>
             </div>
         </div>
@@ -150,7 +155,32 @@
         window.db_local = [];
         window.idxAtivo = null;
 
-        // Login Logic
+        // Máscaras
+        window.maskCPF = (i) => {
+            let v = i.value.replace(/\D/g, "");
+            v = v.replace(/(\d{3})(\d)/, "$1.$2");
+            v = v.replace(/(\d{3})(\d)/, "$1.$2");
+            v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+            i.value = v;
+        };
+
+        window.maskTel = (i) => {
+            let v = i.value.replace(/\D/g, "");
+            v = v.replace(/^(\d{2})(\d)/g, "($1) $2");
+            v = v.replace(/(\d)(\d{4})$/, "$1-$2");
+            i.value = v;
+        };
+
+        window.maskDinheiro = (i) => {
+            let v = i.value.replace(/\D/g,'');
+            v = (v/100).toFixed(2) + '';
+            v = v.replace(".", ",");
+            v = v.replace(/(\d)(\d{3})(\d{3}),/g, "$1.$2.$3,");
+            v = v.replace(/(\d)(\d{3}),/g, "$1.$2,");
+            i.value = "R$ " + v;
+        };
+
+        // Firebase Logic
         onAuthStateChanged(auth, user => {
             if (user) {
                 document.getElementById('login-screen').style.display = 'none';
@@ -161,7 +191,7 @@
 
         document.getElementById('btnLogin').addEventListener('click', async () => {
             try { await signInWithEmailAndPassword(auth, document.getElementById('loginEmail').value, document.getElementById('loginPass').value); } 
-            catch(e) { alert("Acesso negado. Verifique os dados."); }
+            catch(e) { alert("Acesso inválido."); }
         });
 
         function ouvirBanco() {
@@ -173,15 +203,6 @@
 
         window.openModal = (id) => document.getElementById(id).classList.remove('hidden');
         window.closeModal = (id) => { document.getElementById(id).classList.add('hidden'); window.idxAtivo = null; };
-
-        window.maskDinheiro = (i) => {
-            let v = i.value.replace(/\D/g,'');
-            v = (v/100).toFixed(2) + '';
-            v = v.replace(".", ",");
-            v = v.replace(/(\d)(\d{3})(\d{3}),/g, "$1.$2.$3,");
-            v = v.replace(/(\d)(\d{3}),/g, "$1.$2,");
-            i.value = "R$ " + v;
-        };
 
         document.getElementById('formAluno').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -219,7 +240,6 @@
 
             const baseTexto = `✅ *À VISTA/CARTÃO:* ${vAV} (em até 12x iguais).\n📦 *PARCELADO NO BOLETO:* Total de ${vAC} sendo Entrada de ${ent} + ${parc} parcelas de ${vPM}.\n\n*Vencimento:* ${venc}.`;
 
-            // MENSAGENS ORIGINAIS RESTAURADAS
             let msg = remat ? 
                 `Olá, *${a.nome}*! Sentimos sua falta na unidade *${a.unidade}*. Seu sonho não pode parar. Preparamos uma condição exclusiva:\n\n🚀 ${baseTexto}\n\nCom a rematrícula, sua plataforma volta em até 7 dias úteis. Vamos recomeçar? Responda *SIM*.` :
                 `Olá, *${a.nome}*. Temos uma proposta para regularizar suas pendências na unidade *${a.unidade}*:\n\n${baseTexto}\n\nBaixa nos sistemas em até 5 dias úteis. Responda *SIM* para fechar o acordo.`;
@@ -247,23 +267,18 @@
             window.db_local.forEach((a, idx) => {
                 if(filtroU !== "Todas" && a.unidade !== filtroU) return;
                 if(busca && !a.nome.toLowerCase().includes(busca)) return;
-
                 if(a.status === 'Confirmado') f++;
                 if(a.status === 'Enviado') e++;
-
-                let sBadge = `<span class="text-gray-500 font-bold italic">Pendente</span>`;
-                if(a.status === 'Enviado') sBadge = `<span class="text-blue-400 font-bold italic">Enviada</span>`;
-                if(a.status === 'Confirmado') sBadge = `<span class="text-orange font-black uppercase">● Fechado</span>`;
 
                 lista.innerHTML += `
                     <tr class="hover:bg-slate-800 transition border-b border-gray-800 text-sm">
                         <td class="p-4"><b>${a.nome}</b><br><span class="text-[10px] text-gray-500">${a.cpf}</span></td>
                         <td class="p-4">${a.unidade}</td>
-                        <td class="p-4">${sBadge}</td>
+                        <td class="p-4">${a.status}</td>
                         <td class="p-4">${a.fin ? a.fin.venc : '---'}</td>
-                        <td class="p-4 flex justify-center gap-4">
-                            <button onclick="prepararAcordo(${idx})" class="text-orange"><i class="fas fa-handshake fa-lg"></i></button>
-                            <button onclick="confirmar(${idx})" class="text-green-500"><i class="fas fa-check-double fa-lg"></i></button>
+                        <td class="p-4 flex gap-4">
+                            <button onclick="prepararAcordo(${idx})" class="text-orange"><i class="fas fa-handshake"></i></button>
+                            <button onclick="confirmar(${idx})" class="text-green-500"><i class="fas fa-check-double"></i></button>
                             <button onclick="excluirAluno(${idx})" class="text-red-900"><i class="fas fa-trash"></i></button>
                         </td>
                     </tr>`;
