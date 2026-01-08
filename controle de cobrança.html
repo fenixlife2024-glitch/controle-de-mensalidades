@@ -58,12 +58,13 @@
             <div class="bg-dark-blue rounded shadow-2xl overflow-hidden border border-gray-800">
                 <div class="p-4 border-b border-gray-700 flex justify-between items-center bg-slate-800/30">
                     <h2 class="font-bold text-lg">Painel de Negociações</h2>
-                    <input type="text" id="buscaGeral" onkeyup="renderizarTabela()" placeholder="Buscar nome..." class="bg-slate-900 border border-gray-700 p-2 rounded text-sm w-72 outline-none focus:border-orange">
+                    <input type="text" id="buscaGeral" onkeyup="renderizarTabela()" placeholder="Buscar por CPF..." class="bg-slate-900 border border-gray-700 p-2 rounded text-sm w-72 outline-none focus:border-orange">
                 </div>
                 <table class="w-full text-left">
                     <thead class="bg-slate-800 text-xs uppercase text-gray-400 font-black">
                         <tr>
-                            <th class="p-4">Aluno</th>
+                            <th class="p-4 w-10">#</th>
+                            <th class="p-4">Aluno / CPF</th>
                             <th class="p-4">Unidade</th>
                             <th class="p-4">Status / Parcelas</th>
                             <th class="p-4">Vencimento</th>
@@ -172,7 +173,6 @@
         window.openModal = (id) => document.getElementById(id).classList.remove('hidden');
         window.closeModal = (id) => { document.getElementById(id).classList.add('hidden'); window.idxAtivo = null; };
 
-        // MÁSCARAS
         window.maskCPF = (i) => {
             let v = i.value.replace(/\D/g, "");
             v = v.replace(/(\d{3})(\d)/, "$1.$2");
@@ -205,12 +205,17 @@
                 tipo: document.getElementById('tipo').value,
                 unidade: document.getElementById('unidade').value,
                 status: 'Pendente',
-                parcelaAtual: 0 
+                parcelaAtual: 0,
+                marcado: false
             };
             await setDoc(doc(db, "negociacoes", id), novo);
             closeModal('modalAluno');
             e.target.reset();
         });
+
+        window.toggleMarcador = async (id, estadoAtual) => {
+            await updateDoc(doc(db, "negociacoes", id), { marcado: !estadoAtual });
+        };
 
         window.prepararAcordo = (idx) => {
             window.idxAtivo = idx;
@@ -230,11 +235,8 @@
             const dt = new Date(); dt.setDate(dt.getDate() + 4);
             const venc = dt.toLocaleDateString('pt-BR');
 
-            // MARKETING: PROPOSTA INICIAL
             let msg = `Olá, *${a.nome}*! 👋\n\nIdentificamos uma oportunidade especial para regularizar sua situação na unidade *${a.unidade}*. Nosso objetivo é que você continue focado no seu crescimento!\n\n`;
-            
             if(remat) msg += `🚀 *SEU SONHO NÃO PODE PARAR!*\nReativando agora, sua plataforma volta em até 7 dias úteis.\n\n`;
-
             msg += `💳 *OPÇÃO CARTÃO (Liberação entre 3 a 4 dias úteis):*\nDeixe tudo em dia por apenas *${vAV}* (em até 12x).\n\n`;
             msg += `📄 *OPÇÃO BOLETO PARCELADO (Liberação da plataforma em até 7 dias úteis):*\nEntrada de *${ent}* + *${parc}x* de *${vPM}*.\n\n`;
             msg += `📅 *Vencimento da Entrada:* ${venc}\n\nPara fechar agora e garantir essa condição, responda *SIM*.`;
@@ -251,10 +253,8 @@
         window.enviarProximaParcela = async (idx) => {
             const a = window.db_local[idx];
             const prox = (a.parcelaAtual || 0) + 1;
-            
             if (prox > a.fin.totalParcelas) return alert("Acordo 100% quitado!");
 
-            // MARKETING: MENSAGEM DE PARCELA RECORRENTE
             const msg = `Olá, *${a.nome}*! 👋\n\nEsperamos que esteja tudo bem com seus estudos! Segue o boleto da sua parcela *${prox}/${a.fin.totalParcelas}* do acordo firmado com a unidade *${a.unidade}*.\n\n💰 *Valor:* ${a.fin.valorParcela}\n\n🔗 Você também pode localizar todas as suas parcelas e o histórico financeiro diretamente em nosso portal oficial:\nhttps://www.vaiqta.com.br/\n\nBons estudos! 📚`;
             
             const novoVenc = new Date();
@@ -280,13 +280,15 @@
         window.renderizarTabela = () => {
             const lista = document.getElementById('listaAlunos');
             const filtroU = document.getElementById('filtroUnidade').value;
-            const busca = document.getElementById('buscaGeral').value.toLowerCase();
+            const busca = document.getElementById('buscaGeral').value.replace(/\D/g, '');
             lista.innerHTML = "";
             let f=0, e=0;
 
             window.db_local.forEach((a, idx) => {
                 if(filtroU !== "Todas" && a.unidade !== filtroU) return;
-                if(busca && !a.nome.toLowerCase().includes(busca)) return;
+                const cpfLimpo = a.cpf ? a.cpf.replace(/\D/g, '') : '';
+                if(busca && !cpfLimpo.includes(busca)) return;
+
                 if(a.status === 'Confirmado') f++;
                 if(a.status === 'Enviado') e++;
 
@@ -298,18 +300,28 @@
                     sBadge = `<span class="text-green-500 font-black text-[10px]">ATIVO: ${p}/${t}</span>`;
                 }
 
+                const isMarcado = a.marcado ? 'text-orange' : 'text-gray-700';
+
                 lista.innerHTML += `
-                    <tr class="hover:bg-slate-800 transition border-b border-gray-800 text-sm">
-                        <td class="p-4"><b>${a.nome}</b></td>
+                    <tr class="hover:bg-slate-800 transition border-b border-gray-800 text-sm ${a.marcado ? 'bg-orange/5' : ''}">
+                        <td class="p-4">
+                            <button onclick="toggleMarcador('${a.id}', ${a.marcado || false})" class="${isMarcado} hover:scale-110 transition">
+                                <i class="fas fa-bookmark fa-lg"></i>
+                            </button>
+                        </td>
+                        <td class="p-4">
+                            <div class="font-bold uppercase">${a.nome}</div>
+                            <div class="text-[10px] text-gray-400 font-mono">${a.cpf || ''}</div>
+                        </td>
                         <td class="p-4 text-xs">${a.unidade}</td>
                         <td class="p-4">${sBadge}</td>
                         <td class="p-4 text-xs">${a.fin ? a.fin.venc : '---'}</td>
                         <td class="p-4 flex justify-center gap-4">
                             ${a.status === 'Confirmado' ? 
-                                `<button onclick="enviarProximaParcela(${idx})" class="text-blue-400" title="Próxima Parcela (Boleto)"><i class="fas fa-paper-plane fa-lg"></i></button>` : 
-                                `<button onclick="prepararAcordo(${idx})" class="text-orange" title="Nova Proposta"><i class="fas fa-handshake fa-lg"></i></button>`
+                                `<button onclick="enviarProximaParcela(${idx})" class="text-blue-400"><i class="fas fa-paper-plane fa-lg"></i></button>` : 
+                                `<button onclick="prepararAcordo(${idx})" class="text-orange"><i class="fas fa-handshake fa-lg"></i></button>`
                             }
-                            <button onclick="confirmar(${idx})" class="text-green-500" title="Confirmar Acordo"><i class="fas fa-check-double fa-lg"></i></button>
+                            <button onclick="confirmar(${idx})" class="text-green-500"><i class="fas fa-check-double fa-lg"></i></button>
                             <button onclick="excluirAluno(${idx})" class="text-red-900"><i class="fas fa-trash"></i></button>
                         </td>
                     </tr>`;
