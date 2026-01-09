@@ -41,8 +41,9 @@
         .modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
         .modal-content { background: white; padding: 25px; border-radius: 16px; width: 95%; max-width: 550px; max-height: 90vh; overflow-y: auto; }
         #login-screen { position: fixed; inset: 0; background: var(--primary); display: flex; justify-content: center; align-items: center; z-index: 2000; }
-        .star-icon { cursor: pointer; font-size: 18px; color: #cbd5e1; transition: 0.2s; }
+        .star-icon, .doc-icon { cursor: pointer; font-size: 18px; color: #cbd5e1; transition: 0.2s; text-decoration: none; }
         .star-active { color: #f59e0b !important; }
+        .doc-active { color: var(--danger) !important; }
         .grid-form { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
     </style>
 </head>
@@ -120,7 +121,7 @@
     
     <div style="flex-grow:1; overflow:auto; background:white; border-radius:12px; border:1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
         <table>
-            <thead><tr><th style="width:20px;"><input type="checkbox" onclick="toggleTodos(this)"></th><th style="width:30px;">★</th><th>RA</th><th>Nome do Aluno</th><th>Meses</th><th>Status</th><th>WhatsApp</th><th>Lembrete</th></tr></thead>
+            <thead><tr><th style="width:20px;"><input type="checkbox" onclick="toggleTodos(this)"></th><th style="width:30px;">★</th><th style="width:30px;">Doc</th><th>RA</th><th>Nome do Aluno</th><th>Meses</th><th>Status</th><th>WhatsApp</th><th>Lembrete</th></tr></thead>
             <tbody id="corpoTabela"></tbody>
         </table>
     </div>
@@ -222,7 +223,6 @@
         document.getElementById('mCategoria').value = "Extranet";
         document.getElementById('mStatusEnvio').value = "Pendente";
         
-        // Gerar estrutura de mensalidades baseada no filtro atual
         const sem = document.getElementById('semestreSelect').value;
         const ano = document.getElementById('anoRef').value;
         let mI = sem==="1"?1:sem==="2"?7:1; 
@@ -247,7 +247,7 @@
         const aluno = window.alunos[ra];
         document.getElementById('modalTitle').innerText = "Editando: " + aluno.nome;
         document.getElementById('mRA').value = aluno.ra;
-        document.getElementById('mRA').disabled = true; // RA não se muda
+        document.getElementById('mRA').disabled = true;
         document.getElementById('mNome').value = aluno.nome;
         document.getElementById('mTel').value = aluno.tel;
         document.getElementById('mUnidade').value = aluno.unidade;
@@ -297,6 +297,7 @@
             categoria: document.getElementById('mCategoria').value,
             controleEnvio: document.getElementById('mStatusEnvio').value,
             marcado: window.alunos[ra]?.marcado || false,
+            docPendente: window.alunos[ra]?.docPendente || false,
             mensalidades: mensalidades
         };
 
@@ -339,6 +340,7 @@
             tr.innerHTML = `
                 <td><input type="checkbox" class="chk-aluno" data-ra="${a.ra}"></td>
                 <td><span class="star-icon ${a.marcado ? 'star-active' : ''}" onclick="toggleMarcador('${a.ra}')">★</span></td>
+                <td><span class="doc-icon ${a.docPendente ? 'doc-active' : ''}" onclick="toggleDoc('${a.ra}')">📄</span></td>
                 <td>${a.ra}</td>
                 <td onclick="abrirModalEdicao('${a.ra}')" style="cursor:pointer; color:var(--accent); font-weight:700;">${a.nome}</td>
                 <td><div style="display:flex; gap:4px; flex-wrap:wrap; max-width:200px;">${a.mensalidades.map((m,i)=>`<div class="mes-box ${m.pago?'mes-pago':'mes-pendente'}" onclick="togglePagamento('${a.ra}',${i})">${m.mes}</div>`).join('')}</div></td>
@@ -381,6 +383,17 @@
         return `Olá ${aluno.nome}, 🌟\n\nIdentificamos que você ainda não aproveitou o seu BENEFÍCIO de Pontualidade! \n\nEfetue o pagamento da sua mensalidade até o dia *${prazo}* e garanta automaticamente *9% de DESCONTO* no valor da parcela. \n\nAproveite para economizar! Qualquer dúvida, estamos à disposição.`;
     }
 
+    function gerarTextoDoc(aluno) {
+        const u = (aluno.unidade || "").toUpperCase();
+        let contato = "(81) 99988-9803";
+        let link = "https://wa.me/5581999889803";
+        
+        if (u.includes("RECIFE")) { contato = "(81) 98261-7644"; link = "https://wa.me/5581982617644"; }
+        else if (u.includes("CARPINA")) { contato = "(81) 99315-7905"; link = "https://wa.me/5581993157905"; }
+
+        return `Olá ${aluno.nome}! 🎓\n\nIdentificamos uma pendência em sua *documentação acadêmica*.\n\nEssa pendência precisa ser regularizada o quanto antes, pois ela impede a efetivação da sua rematrícula e o seu avanço para o próximo semestre.\n\nPor favor, entre em contato com a secretaria da unidade ${aluno.unidade} para regularizar sua situação:\n\n👉 *Falar com a Secretaria agora:* ${link}\n\nEstamos à disposição para ajudar!`;
+    }
+
     // UTILITÁRIOS
     window.renderizarPainel = function() {
         const ticket = parseFloat(document.getElementById('ticketMedio').value) || 70;
@@ -407,6 +420,17 @@
     window.toggleMarcador = async function(ra) {
         window.alunos[ra].marcado = !window.alunos[ra].marcado;
         await updateDoc(doc(db, "alunos", ra), { marcado: window.alunos[ra].marcado });
+        renderizar();
+    }
+
+    window.toggleDoc = async function(ra) {
+        const aluno = window.alunos[ra];
+        aluno.docPendente = !aluno.docPendente;
+        await updateDoc(doc(db, "alunos", ra), { docPendente: aluno.docPendente });
+        if(aluno.docPendente) {
+            const msg = gerarTextoDoc(aluno);
+            window.open(`https://wa.me/55${aluno.tel}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
         renderizar();
     }
 
@@ -463,7 +487,7 @@
                 const c = line.split(';'); if (!c[0] || c[0].toUpperCase().includes("RA")) continue; 
                 const ra = c[0].replace(/\D/g, ''); if (window.alunos[ra]) continue; 
                 const m = []; for(let i=mI; i<=mF; i++) m.push({mes:i, ano:ano, pago:false, vencimento:`${ano}-${String(i).padStart(2,'0')}-10`}); 
-                const obj = { ra, nome: c[1]?.trim(), tel: c[2]?.replace(/\D/g,''), unidade: c[3]?.trim(), categoria: c[4]?.trim() || 'Extranet', controleEnvio: 'Pendente', mensalidades: m, marcado: false };
+                const obj = { ra, nome: c[1]?.trim(), tel: c[2]?.replace(/\D/g,''), unidade: c[3]?.trim(), categoria: c[4]?.trim() || 'Extranet', controleEnvio: 'Pendente', mensalidades: m, marcado: false, docPendente: false };
                 batch.set(doc(db, "alunos", ra), obj);
             } 
             await batch.commit(); location.reload();
