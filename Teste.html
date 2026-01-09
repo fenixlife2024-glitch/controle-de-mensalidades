@@ -19,7 +19,7 @@
         .config-bar { background: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #e2e8f0; display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 12px; align-items: flex-end; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         .input-group { display: flex; flex-direction: column; gap: 5px; }
         label { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #64748b; }
-        .form-control { padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; outline: none; }
+        .form-control { padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; outline: none; width: 100%; box-sizing: border-box; }
         .dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
         .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 5px solid var(--accent); }
         .card h4 { margin: 0 0 10px 0; font-size: 12px; color: #64748b; text-transform: uppercase; }
@@ -39,10 +39,11 @@
         .btn-danger { background: var(--danger); color: white; }
         .btn-warning { background: var(--warning); color: white; }
         .modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
-        .modal-content { background: white; padding: 25px; border-radius: 16px; width: 95%; max-width: 500px; }
+        .modal-content { background: white; padding: 25px; border-radius: 16px; width: 95%; max-width: 550px; max-height: 90vh; overflow-y: auto; }
         #login-screen { position: fixed; inset: 0; background: var(--primary); display: flex; justify-content: center; align-items: center; z-index: 2000; }
         .star-icon { cursor: pointer; font-size: 18px; color: #cbd5e1; transition: 0.2s; }
         .star-active { color: #f59e0b !important; }
+        .grid-form { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
     </style>
 </head>
 <body>
@@ -50,8 +51,8 @@
 <div id="login-screen">
     <div class="login-box" style="background:white; padding:40px; border-radius:16px; width:300px;">
         <h2 style="text-align:center; margin-top:0;">Login</h2>
-        <input type="email" id="loginEmail" placeholder="E-mail" class="form-control" style="width:100%; margin-bottom:15px; box-sizing:border-box;">
-        <input type="password" id="loginPass" placeholder="Senha" class="form-control" style="width:100%; margin-bottom:20px; box-sizing:border-box;">
+        <input type="email" id="loginEmail" placeholder="E-mail" class="form-control" style="margin-bottom:15px;">
+        <input type="password" id="loginPass" placeholder="Senha" class="form-control" style="margin-bottom:20px;">
         <button id="btnLogin" style="background:var(--accent); color:white; border:none; padding:12px; border-radius:8px; cursor:pointer; font-weight:bold; width:100%;">Entrar</button>
     </div>
 </div>
@@ -64,17 +65,19 @@
     </div>
     <div style="padding: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
         <label style="color: #94a3b8; margin-bottom: 5px; display: block;">Ticket Médio (R$)</label>
-        <input type="number" id="ticketMedio" class="form-control" value="70" oninput="renderizarPainel()" style="background: #334155; color: white; border: 1px solid #475569; width: 100%;">
+        <input type="number" id="ticketMedio" class="form-control" value="70" oninput="renderizarPainel()" style="background: #334155; color: white; border: 1px solid #475569;">
     </div>
 </div>
 
 <div class="view-container view-active" id="mainContainer">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
         <h1 style="margin:0; font-size: 22px; font-weight: 800;">Painel de Cobrança</h1>
-        <div style="display:flex; gap:10px; align-items:center;">
+        <div style="display:flex; gap:8px; align-items:center;">
+            <button onclick="abrirModalCadastro()" class="btn btn-primary">➕ Novo Aluno</button>
+            <button onclick="editarSelecionado()" class="btn btn-warning" style="background:#6366f1">✏️ Editar Seleção</button>
             <button onclick="resetarStatusEnvio()" class="btn btn-warning">🔄 Resetar Status</button>
-            <button onclick="excluirSelecionados()" class="btn btn-danger">🗑️ Deletar Seleção</button>
-            <span id="contador" style="font-weight:700; color:var(--accent); font-size:12px; background:#e0f2fe; padding:5px 10px; border-radius:20px;">Sincronizando...</span>
+            <button onclick="excluirSelecionados()" class="btn btn-danger">🗑️ Deletar</button>
+            <span id="contador" style="font-weight:700; color:var(--accent); font-size:11px; background:#e0f2fe; padding:5px 10px; border-radius:20px;">Sincronizando...</span>
         </div>
     </div>
     
@@ -82,35 +85,35 @@
         <div class="input-group">
             <label>Período</label>
             <select id="semestreSelect" class="form-control" onchange="carregarDados()">
-                <option value="all">Ano Completo (Jan-Dez)</option>
-                <option value="1">1º Semestre (Jan-Jun)</option>
-                <option value="2">2º Semestre (Jul-Dez)</option>
+                <option value="all">Ano Completo</option>
+                <option value="1">1º Semestre</option>
+                <option value="2">2º Semestre</option>
             </select>
         </div>
         <div class="input-group"><label>Ano</label><input type="number" id="anoRef" class="form-control" value="2026"></div>
         <div class="input-group"><label>Unidade</label><select id="filtroUnidade" class="form-control" onchange="renderizar(); renderizarPainel();"><option value="">Todas</option></select></div>
         
         <div class="input-group">
-            <label>Status Operacional</label>
+            <label>Status</label>
             <select id="filtroStatusEnvio" class="form-control" onchange="renderizar()">
-                <option value="todos">Todos os Status</option>
-                <option value="Pendente">⏳ Apenas Pendentes</option>
-                <option value="Enviado">📤 Apenas Enviados</option>
-                <option value="Pago">✅ Apenas Pagos</option>
-                <option value="Número Inválido">🚫 Números Inválidos</option>
+                <option value="todos">Todos</option>
+                <option value="Pendente">⏳ Pendentes</option>
+                <option value="Enviado">📤 Enviados</option>
+                <option value="Pago">✅ Pagos</option>
+                <option value="Número Inválido">🚫 Inválidos</option>
             </select>
         </div>
 
         <div class="input-group">
             <label>Marcador ★</label>
             <select id="filtroMarcado" class="form-control" onchange="renderizar()">
-                <option value="todos">Ver Todos</option>
-                <option value="marcados">Apenas Estrela ★</option>
+                <option value="todos">Todos</option>
+                <option value="marcados">Estrela ★</option>
             </select>
         </div>
         <div class="input-group"><label>Categoria</label><select id="filtroCategoria" class="form-control" onchange="renderizar(); renderizarPainel();"><option value="">Todas</option><option value="PTC">PTC</option><option value="Extranet">Extranet</option></select></div>
         <div class="input-group"><label>Prazo 9% Off</label><input type="text" id="prazoCampanha" class="form-control" value="05/02" oninput="renderizar()"></div>
-        <div class="input-group"><label style="color:var(--accent)">Importar Alunos</label><input type="file" id="csvInput" accept=".csv" class="form-control" onchange="importarCSV(this)"></div>
+        <div class="input-group"><label style="color:var(--accent)">Importar CSV</label><input type="file" id="csvInput" accept=".csv" class="form-control" onchange="importarCSV(this)"></div>
     </div>
 
     <input type="text" id="busca" placeholder="Pesquisar por nome ou RA..." class="form-control" style="width:100%; margin-bottom:15px; padding:12px;" onkeyup="renderizar()">
@@ -123,47 +126,52 @@
     </div>
 </div>
 
+<div id="modal" class="modal">
+    <div class="modal-content">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3 id="modalTitle" style="margin:0; font-size:18px;">Dados do Aluno</h3>
+            <button onclick="fecharModal()" style="border:none; background:none; cursor:pointer; font-size:28px; color:#94a3b8;">&times;</button>
+        </div>
+        
+        <div class="grid-form">
+            <div class="input-group"><label>RA (Único)</label><input type="text" id="mRA" class="form-control"></div>
+            <div class="input-group"><label>Nome Completo</label><input type="text" id="mNome" class="form-control"></div>
+            <div class="input-group"><label>WhatsApp (DDD+Número)</label><input type="text" id="mTel" class="form-control"></div>
+            <div class="input-group"><label>Unidade</label><input type="text" id="mUnidade" class="form-control"></div>
+            <div class="input-group"><label>Categoria</label><select id="mCategoria" class="form-control"><option value="Extranet">Extranet</option><option value="PTC">PTC</option></select></div>
+            <div class="input-group"><label>Status de Envio</label><select id="mStatusEnvio" class="form-control"><option value="Pendente">Pendente</option><option value="Enviado">Enviado</option><option value="Pago">Pago</option><option value="Número Inválido">Inválido</option></select></div>
+        </div>
+
+        <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
+        <label style="margin-bottom:10px; display:block; font-weight:bold;">Vencimentos das Mensalidades:</label>
+        <div id="listaMensalidades" style="display:flex; flex-direction:column; gap:8px; margin-bottom:20px;"></div>
+
+        <button onclick="salvarAluno()" class="btn btn-primary" style="width:100%; padding:12px; justify-content:center; font-size:14px;">💾 Salvar Informações</button>
+    </div>
+</div>
+
 <div class="view-container" id="painelGestao">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 25px;">
         <h1 style="margin:0; font-size: 22px; font-weight: 800;">Relatórios Executivos</h1>
         <div style="display:flex; gap:10px; align-items:flex-end;">
             <div class="input-group">
-                <label>Mês de Referência</label>
+                <label>Mês Ref.</label>
                 <select id="mesRefDash" class="form-control" onchange="renderizarPainel()"></select>
             </div>
-            <button onclick="gerarRelatorioPDF()" class="btn btn-primary" style="padding:12px 25px; font-size:13px;">📄 Gerar PDF para Diretoria</button>
+            <button onclick="gerarRelatorioPDF()" class="btn btn-primary" style="padding:12px 25px;">📄 PDF Diretoria</button>
         </div>
     </div>
     <div class="dash-grid">
-        <div class="card"><h4>Universo de Clientes</h4><span class="val" id="d-total">0</span></div>
-        <div class="card" style="border-left-color: var(--success)"><h4>Pagos no Mês Ref.</h4><span class="val" id="d-pag-mes">0</span></div>
-        <div class="card" style="border-left-color: var(--danger)"><h4>Em Atraso (Ativos)</h4><span class="val" id="d-atraso">0</span></div>
-        <div class="card" style="border-left-color: var(--warning)"><h4>Documentos Enviados</h4><span class="val" id="d-env">0</span></div>
-    </div>
-    <div class="card" style="margin-top:20px; border-left-color: var(--primary)">
-        <h4 style="margin-bottom:15px;">Prévia da Receita (Cenários Probabilísticos)</h4>
-        <div style="display:flex; gap:30px;">
-            <div><label>Otimista</label><div class="val" id="p-arr" style="color:var(--success)">R$ 0,00</div></div>
-            <div><label>Moderado</label><div class="val" id="p-med" style="color:var(--accent)">R$ 0,00</div></div>
-            <div><label>Conservador</label><div class="val" id="p-mod" style="color:var(--warning)">R$ 0,00</div></div>
-        </div>
-    </div>
-</div>
-
-<div id="modal" class="modal">
-    <div class="modal-content">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h3 id="mNome" style="margin:0; font-size:18px;"></h3>
-            <button onclick="fecharModal()" style="border:none; background:none; cursor:pointer; font-size:28px; color:#94a3b8;">&times;</button>
-        </div>
-        <label style="margin-bottom:10px; display:block; font-weight:bold;">Editar Vencimentos:</label>
-        <div id="listaMensalidades" style="display:flex; flex-direction:column; gap:10px;"></div>
+        <div class="card"><h4>Total Clientes</h4><span class="val" id="d-total">0</span></div>
+        <div class="card" style="border-left-color: var(--success)"><h4>Pagos (Mês)</h4><span class="val" id="d-pag-mes">0</span></div>
+        <div class="card" style="border-left-color: var(--danger)"><h4>Em Atraso</h4><span class="val" id="d-atraso">0</span></div>
+        <div class="card" style="border-left-color: var(--warning)"><h4>Enviados</h4><span class="val" id="d-env">0</span></div>
     </div>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDocs, collection, updateDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDocs, collection, updateDoc, writeBatch, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
     const firebaseConfig = { apiKey: "AIzaSyC4_dlIiCaNHtj7eWB4kW200vnO6AuuuTA", authDomain: "reguacobranca.firebaseapp.com", projectId: "reguacobranca", storageBucket: "reguacobranca.firebasestorage.app", messagingSenderId: "85201788796", appId: "1:85201788796:web:25cf11a726cec89d248ef9" };
@@ -203,71 +211,109 @@
         }
     }
 
-    window.abrirModal = function(ra) {
+    // MODAL DE CADASTRO/EDIÇÃO
+    window.abrirModalCadastro = function() {
+        document.getElementById('modalTitle').innerText = "Cadastrar Novo Aluno";
+        document.getElementById('mRA').value = "";
+        document.getElementById('mRA').disabled = false;
+        document.getElementById('mNome').value = "";
+        document.getElementById('mTel').value = "";
+        document.getElementById('mUnidade').value = "";
+        document.getElementById('mCategoria').value = "Extranet";
+        document.getElementById('mStatusEnvio').value = "Pendente";
+        
+        // Gerar estrutura de mensalidades baseada no filtro atual
+        const sem = document.getElementById('semestreSelect').value;
+        const ano = document.getElementById('anoRef').value;
+        let mI = sem==="1"?1:sem==="2"?7:1; 
+        let mF = sem==="1"?6:sem==="2"?12:12;
+        
+        const lista = document.getElementById('listaMensalidades');
+        lista.innerHTML = '';
+        for(let i=mI; i<=mF; i++) {
+            renderizarLinhaMensalidade({mes: i, vencimento: `${ano}-${String(i).padStart(2,'0')}-10`, pago: false}, i-mI);
+        }
+        document.getElementById('modal').style.display = 'flex';
+    }
+
+    window.editarSelecionado = function() {
+        const selecionados = document.querySelectorAll('.chk-aluno:checked');
+        if(selecionados.length !== 1) return alert("Selecione exatamente 1 aluno para editar.");
+        const ra = selecionados[0].getAttribute('data-ra');
+        abrirModalEdicao(ra);
+    }
+
+    window.abrirModalEdicao = function(ra) {
         const aluno = window.alunos[ra];
-        document.getElementById('mNome').innerText = aluno.nome;
+        document.getElementById('modalTitle').innerText = "Editando: " + aluno.nome;
+        document.getElementById('mRA').value = aluno.ra;
+        document.getElementById('mRA').disabled = true; // RA não se muda
+        document.getElementById('mNome').value = aluno.nome;
+        document.getElementById('mTel').value = aluno.tel;
+        document.getElementById('mUnidade').value = aluno.unidade;
+        document.getElementById('mCategoria').value = aluno.categoria || "Extranet";
+        document.getElementById('mStatusEnvio').value = aluno.controleEnvio || "Pendente";
+        
         const lista = document.getElementById('listaMensalidades');
         lista.innerHTML = '';
         aluno.mensalidades.forEach((m, idx) => {
-            const div = document.createElement('div');
-            div.style = 'display:flex; justify-content:space-between; align-items:center; padding:5px; border-bottom:1px solid #f1f5f9;';
-            div.innerHTML = `<span style="font-size:13px; font-weight:600;">Mês ${m.mes}</span>
-                             <input type="date" value="${m.vencimento}" onchange="atualizarVencimento('${ra}', ${idx}, this.value)" class="form-control" style="width:150px;">`;
-            lista.appendChild(div);
+            renderizarLinhaMensalidade(m, idx);
         });
         document.getElementById('modal').style.display = 'flex';
     }
 
-    window.atualizarVencimento = async (ra, idx, data) => {
-        window.alunos[ra].mensalidades[idx].vencimento = data;
-        await setDoc(doc(db, "alunos", ra), window.alunos[ra]);
-    };
+    function renderizarLinhaMensalidade(m, idx) {
+        const div = document.createElement('div');
+        div.style = 'display:flex; justify-content:space-between; align-items:center; padding:5px; border-bottom:1px solid #f1f5f9; gap:10px;';
+        div.innerHTML = `
+            <span style="font-size:12px; font-weight:600; width:60px;">Mês ${m.mes}</span>
+            <input type="date" value="${m.vencimento}" class="form-control m-venc" data-mes="${m.mes}" style="width:140px;">
+            <label style="font-size:9px; display:flex; align-items:center; gap:4px;">
+                <input type="checkbox" class="m-pago" ${m.pago?'checked':''}> Pago
+            </label>
+        `;
+        document.getElementById('listaMensalidades').appendChild(div);
+    }
 
-    // FUNÇÃO COM A LÓGICA DE CANAL DIFERENCIADA (PTC vs EXTRANET)
-    function gerarTextoZap(aluno) {
-        const hoje = new Date(); hoje.setHours(0,0,0,0);
-        const mensalidade = aluno.mensalidades?.find(m => !m.pago);
-        if (!mensalidade) return `Olá ${aluno.nome}, identificamos que você está em dia com suas mensalidades!`;
-        const dataVenc = new Date(mensalidade.vencimento + 'T00:00:00');
-        const mesExtenso = nomesMesesLongos[mensalidade.mes];
-        const anoRef = document.getElementById('anoRef').value;
+    window.salvarAluno = async function() {
+        const ra = document.getElementById('mRA').value.replace(/\D/g, '');
+        if(!ra) return alert("RA é obrigatório");
 
-        // Caso de atraso
-        if (hoje > dataVenc) {
-            const diffDays = Math.ceil(Math.abs(hoje - dataVenc) / (1000 * 60 * 60 * 24));
-            return `Olá ${aluno.nome}, tudo bem? Notamos que a sua mensalidade de ${mesExtenso} está em atraso há ${diffDays} dias. Precisamos regularizar sua situação no portal para evitar suspensão de serviços. Caso já tenha pago, desconsidere esta mensagem.`;
+        const mensalidades = [];
+        document.querySelectorAll('#listaMensalidades > div').forEach(div => {
+            mensalidades.push({
+                mes: parseInt(div.querySelector('.m-venc').getAttribute('data-mes')),
+                vencimento: div.querySelector('.m-venc').value,
+                pago: div.querySelector('.m-pago').checked,
+                ano: document.getElementById('anoRef').value
+            });
+        });
+
+        const dados = {
+            ra: ra,
+            nome: document.getElementById('mNome').value.trim(),
+            tel: document.getElementById('mTel').value.replace(/\D/g, ''),
+            unidade: document.getElementById('mUnidade').value.trim(),
+            categoria: document.getElementById('mCategoria').value,
+            controleEnvio: document.getElementById('mStatusEnvio').value,
+            marcado: window.alunos[ra]?.marcado || false,
+            mensalidades: mensalidades
+        };
+
+        try {
+            await setDoc(doc(db, "alunos", ra), dados);
+            window.alunos[ra] = dados;
+            fecharModal();
+            renderizar();
+            renderizarPainel();
+            atualizarOpcoesFiltros();
+            alert("Dados salvos com sucesso!");
+        } catch (e) {
+            alert("Erro ao salvar: " + e.message);
         }
-
-        // Caso de rematrícula (Meses 1 ou 7)
-        if (mensalidade.mes === 1 || mensalidade.mes === 7) {
-            const sem = mensalidade.mes === 1 ? '1' : '2';
-            const instrucaoPag = (aluno.categoria === 'PTC') 
-                ? `👉 Acesse o link:       e realize o pagamento da parcela de ${mesExtenso} para ativar sua vaga!`
-                : `👉 A mensalidade de ${mesExtenso} anexo e automaticamente ative sua vaga!`;
-
-            return `🚀 Olá ${aluno.nome}, Não Pare de Evoluir!\n\nSua próxima conquista está esperando! A rematrícula ${anoRef}.${sem} já está liberada.\n\n${instrucaoPag}\n\nNão deixe para a última hora. Vamos juntos para ${anoRef}! 🚀`;
-        }
-
-        // Mensagem Mensalidade Padrão
-        const canalTexto = (aluno.categoria === 'PTC')
-            ? `o link para pagamento da mensalidade de ${mesExtenso} já está disponível Acesse:    .`
-            : `o boleto de ${mesExtenso} está disponível em sua plataforma.`;
-
-        return `Olá ${aluno.nome}, tudo bem? \n\n🚀Passando para informar que ${canalTexto} \n\n👉Siga as orientações: \n👉Clique no ítem financeiro; \n👉Mensalidades e serviços; \n👉Selecione Pagar; Escolha Boleto, Pix ou Cartão. \n\n👉Dúvidas? Tutorial: https://www.youtube.com/watch?v=vcaDMgU-yg0`;
     }
 
-    function gerarTexto9Off(aluno) {
-        const prazo = document.getElementById('prazoCampanha').value;
-        return `Olá ${aluno.nome}, 🌟\n\nIdentificamos que você ainda não aproveitou o seu BENEFÍCIO de Pontualidade! \n\nEfetue o pagamento da sua mensalidade até o dia *${prazo}* e garanta automaticamente *9% de DESCONTO* no valor da parcela. \n\nAproveite para economizar! Qualquer dúvida, estamos à disposição.`;
-    }
-
-    window.toggleMarcador = async function(ra) {
-        const novoStatus = !window.alunos[ra].marcado;
-        window.alunos[ra].marcado = novoStatus;
-        await updateDoc(doc(db, "alunos", ra), { marcado: novoStatus });
-        renderizar();
-    }
-
+    // FUNÇÕES DE RENDERIZAÇÃO E OPERACIONAIS
     window.renderizar = function() {
         const t = document.getElementById('corpoTabela');
         const b = document.getElementById('busca').value.toLowerCase();
@@ -275,6 +321,7 @@
         const fCat = document.getElementById('filtroCategoria').value;
         const fMarcado = document.getElementById('filtroMarcado').value;
         const fStatus = document.getElementById('filtroStatusEnvio').value;
+        
         const lista = Object.values(window.alunos).filter(a => {
             const status = a.controleEnvio || 'Pendente';
             const matchFiltros = (!fUni || a.unidade === fUni) && (!fCat || a.categoria === fCat);
@@ -283,6 +330,7 @@
             const matchStatusEnvio = (fStatus === 'todos' || status === fStatus);
             return matchFiltros && matchBusca && matchMarcado && matchStatusEnvio;
         }).sort((x,y) => x.nome.localeCompare(y.nome));
+
         t.innerHTML = '';
         lista.forEach(a => {
             const status = a.controleEnvio || 'Pendente';
@@ -292,10 +340,10 @@
                 <td><input type="checkbox" class="chk-aluno" data-ra="${a.ra}"></td>
                 <td><span class="star-icon ${a.marcado ? 'star-active' : ''}" onclick="toggleMarcador('${a.ra}')">★</span></td>
                 <td>${a.ra}</td>
-                <td onclick="abrirModal('${a.ra}')" style="cursor:pointer; color:var(--accent); font-weight:700;">${a.nome}</td>
+                <td onclick="abrirModalEdicao('${a.ra}')" style="cursor:pointer; color:var(--accent); font-weight:700;">${a.nome}</td>
                 <td><div style="display:flex; gap:4px; flex-wrap:wrap; max-width:200px;">${a.mensalidades.map((m,i)=>`<div class="mes-box ${m.pago?'mes-pago':'mes-pendente'}" onclick="togglePagamento('${a.ra}',${i})">${m.mes}</div>`).join('')}</div></td>
                 <td>
-                    <select class="form-control" onchange="alterarStatus('${a.ra}', this.value)" style="font-size:10px; height:30px;">
+                    <select class="form-control" onchange="alterarStatus('${a.ra}', this.value)" style="font-size:10px; height:28px; padding:2px;">
                         <option value="Pendente" ${status==='Pendente'?'selected':''}>⏳ Pendente</option>
                         <option value="Enviado" ${status==='Enviado'?'selected':''}>📤 Enviado</option>
                         <option value="Pago" ${status==='Pago'?'selected':''}>✅ Pago</option>
@@ -309,6 +357,31 @@
         document.getElementById('contador').innerText = `${lista.length} Clientes`;
     }
 
+    // LÓGICA DE TEXTOS ZAP
+    function gerarTextoZap(aluno) {
+        const hoje = new Date(); hoje.setHours(0,0,0,0);
+        const mensalidade = aluno.mensalidades?.find(m => !m.pago);
+        if (!mensalidade) return `Olá ${aluno.nome}, identificamos que você está em dia com suas mensalidades!`;
+        const dataVenc = new Date(mensalidade.vencimento + 'T00:00:00');
+        const mesExtenso = nomesMesesLongos[mensalidade.mes];
+        const anoRef = document.getElementById('anoRef').value;
+        if (hoje > dataVenc) {
+            const diffDays = Math.ceil(Math.abs(hoje - dataVenc) / (1000 * 60 * 60 * 24));
+            return `Olá ${aluno.nome}, tudo bem? Notamos que a sua mensalidade de ${mesExtenso} está em atraso há ${diffDays} dias. Precisamos regularizar sua situação no portal para evitar suspensão de serviços. Caso já tenha pago, desconsidere esta mensagem.`;
+        }
+        if (mensalidade.mes === 1 || mensalidade.mes === 7) {
+            const sem = mensalidade.mes === 1 ? '1' : '2';
+            return `🚀 Olá ${aluno.nome}, Não Pare de Evoluir!\n\nSua próxima conquista está esperando! A rematrícula ${anoRef}.${sem} já está liberada.\n\n👉 Pague o Boleto de ${mesExtenso} anexo e automaticamente ative sua vaga!\n\nNão deixe para a última hora. Vamos juntos para ${anoRef}! 🚀`;
+        }
+        return `Olá ${aluno.nome}, tudo bem? \n\n🚀Passando para informar que o boleto de ${mesExtenso} está disponível em sua plataforma. \n\n👉Siga as orientações: \n👉Clique no ítem financeiro; \n👉Mensalidades e serviços; \n👉Selecione Pagar; Escolha Boleto, Pix ou Cartão. \n\n👉Dúvidas? Tutorial: https://www.youtube.com/watch?v=vcaDMgU-yg0`;
+    }
+
+    function gerarTexto9Off(aluno) {
+        const prazo = document.getElementById('prazoCampanha').value;
+        return `Olá ${aluno.nome}, 🌟\n\nIdentificamos que você ainda não aproveitou o seu BENEFÍCIO de Pontualidade! \n\nEfetue o pagamento da sua mensalidade até o dia *${prazo}* e garanta automaticamente *9% de DESCONTO* no valor da parcela. \n\nAproveite para economizar! Qualquer dúvida, estamos à disposição.`;
+    }
+
+    // UTILITÁRIOS
     window.renderizarPainel = function() {
         const ticket = parseFloat(document.getElementById('ticketMedio').value) || 70;
         const fUni = document.getElementById('filtroUnidade').value;
@@ -316,59 +389,100 @@
         const mesRef = parseInt(document.getElementById('mesRefDash').value);
         const hoje = new Date(); hoje.setHours(0,0,0,0);
         const lista = Object.values(window.alunos).filter(a => (!fUni || a.unidade === fUni) && (!fCat || a.categoria === fCat));
-        let stats = { pagNoMes: 0, emAtraso: 0, env: 0, pagTotal: 0 };
+        let stats = { pagNoMes: 0, emAtraso: 0, env: 0 };
         lista.forEach(a => {
             const s = a.controleEnvio || 'Pendente';
-            if(s === 'Pago') stats.pagTotal++; if(s === 'Enviado') stats.env++;
+            if(s === 'Enviado') stats.env++;
             const mRef = a.mensalidades.find(m => m.mes === mesRef);
             if(mRef && mRef.pago) stats.pagNoMes++;
-            const primeiraJan = a.mensalidades.find(m => m.mes === 1);
-            const primeiraJul = a.mensalidades.find(m => m.mes === 7);
-            const pagoPrimeira = (mesRef <= 6 && primeiraJan?.pago) || (mesRef >= 7 && primeiraJul?.pago);
-            if(pagoPrimeira) {
-                const temAtraso = a.mensalidades.some(m => { const dataVenc = new Date(m.vencimento + 'T00:00:00'); return !m.pago && dataVenc < hoje; });
-                if(temAtraso) stats.emAtraso++;
-            }
+            const temAtraso = a.mensalidades.some(m => { const dataVenc = new Date(m.vencimento + 'T00:00:00'); return !m.pago && dataVenc < hoje; });
+            if(temAtraso) stats.emAtraso++;
         });
         document.getElementById('d-total').innerText = lista.length;
         document.getElementById('d-pag-mes').innerText = stats.pagNoMes;
         document.getElementById('d-atraso').innerText = stats.emAtraso;
         document.getElementById('d-env').innerText = stats.env;
-        const f = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        document.getElementById('p-arr').innerText = f((stats.pagTotal * ticket) + (stats.env * ticket * 0.9));
-        document.getElementById('p-med').innerText = f((stats.pagTotal * ticket) + (stats.env * ticket * 0.6));
-        document.getElementById('p-mod').innerText = f((stats.pagTotal * ticket) + (stats.env * ticket * 0.3));
+    }
+
+    window.toggleMarcador = async function(ra) {
+        window.alunos[ra].marcado = !window.alunos[ra].marcado;
+        await updateDoc(doc(db, "alunos", ra), { marcado: window.alunos[ra].marcado });
+        renderizar();
+    }
+
+    window.togglePagamento = async (ra, idx) => {
+        window.alunos[ra].mensalidades[idx].pago = !window.alunos[ra].mensalidades[idx].pago;
+        await setDoc(doc(db, "alunos", ra), window.alunos[ra]);
+        renderizar();
+        renderizarPainel();
+    }
+
+    window.alterarStatus = async (ra, val) => {
+        window.alunos[ra].controleEnvio = val;
+        await updateDoc(doc(db, "alunos", ra), { controleEnvio: val });
+        renderizar();
+        renderizarPainel();
+    }
+
+    window.excluirSelecionados = async () => {
+        const selecionados = document.querySelectorAll('.chk-aluno:checked');
+        if (selecionados.length === 0) return alert("Selecione ao menos um aluno.");
+        if (!confirm(`Deseja excluir ${selecionados.length} aluno(s)?`)) return;
+        
+        const batch = writeBatch(db);
+        selecionados.forEach(chk => {
+            const ra = chk.getAttribute('data-ra');
+            batch.delete(doc(db, "alunos", ra));
+            delete window.alunos[ra];
+        });
+        await batch.commit();
+        renderizar();
+        renderizarPainel();
     }
 
     window.resetarStatusEnvio = async function() {
-        if(!confirm("Resetar status para Pendente?")) return;
-        const listaParaReset = Object.values(window.alunos).filter(a => a.controleEnvio === 'Enviado' || a.controleEnvio === 'Número Inválido');
+        if(!confirm("Resetar todos os Enviados e Inválidos para Pendente?")) return;
         const batch = writeBatch(db);
-        listaParaReset.forEach(a => { batch.update(doc(db, "alunos", a.ra), { controleEnvio: 'Pendente' }); window.alunos[a.ra].controleEnvio = 'Pendente'; });
-        await batch.commit(); renderizar(); renderizarPainel();
+        Object.values(window.alunos).forEach(a => {
+            if(a.controleEnvio === 'Enviado' || a.controleEnvio === 'Número Inválido') {
+                batch.update(doc(db, "alunos", a.ra), { controleEnvio: 'Pendente' });
+                a.controleEnvio = 'Pendente';
+            }
+        });
+        await batch.commit();
+        renderizar();
     }
-
-    window.trocarTela = (id) => { document.querySelectorAll('.view-container').forEach(v => v.classList.remove('view-active')); document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active')); document.getElementById(id).classList.add('view-active'); event.currentTarget.classList.add('active'); };
-    window.fecharModal = () => document.getElementById('modal').style.display = 'none';
-    window.alterarStatus = async (ra, val) => { window.alunos[ra].controleEnvio = val; await updateDoc(doc(db, "alunos", ra), { controleEnvio: val }); renderizar(); renderizarPainel(); };
-    window.togglePagamento = async (ra, idx) => { window.alunos[ra].mensalidades[idx].pago = !window.alunos[ra].mensalidades[idx].pago; await setDoc(doc(db, "alunos", ra), window.alunos[ra]); renderizar(); renderizarPainel(); };
-    function atualizarOpcoesFiltros() { const u = [...new Set(Object.values(window.alunos).map(a => a.unidade))].sort(); document.getElementById('filtroUnidade').innerHTML = '<option value="">Todas</option>' + u.map(x => `<option value="${x}">${x}</option>`).join(''); }
 
     window.importarCSV = function(input) { 
         const r = new FileReader(); r.onload = async (e) => { 
-            const l = e.target.result.split(/\r?\n/); const batch = writeBatch(db); const sem = document.getElementById('semestreSelect').value; const ano = document.getElementById('anoRef').value;
+            const l = e.target.result.split(/\r?\n/); const batch = writeBatch(db); 
+            const sem = document.getElementById('semestreSelect').value; 
+            const ano = document.getElementById('anoRef').value;
             let mI = sem==="1"?1:sem==="2"?7:1; let mF = sem==="1"?6:sem==="2"?12:12;
             for (let line of l) { 
-                const c = line.split(';'); if (!c[0] || c[0].toUpperCase().includes("RA")) continue; const ra = c[0].replace(/\D/g, ''); 
-                if (window.alunos[ra]) continue; const m = []; for(let i=mI; i<=mF; i++) m.push({mes:i, ano:ano, pago:false, vencimento:`${ano}-${String(i).padStart(2,'0')}-10`}); 
-                batch.set(doc(db, "alunos", ra), { ra, nome: c[1]?.trim(), tel: c[2]?.replace(/\D/g,''), unidade: c[3]?.trim(), categoria: c[4]?.trim() || 'Extranet', controleEnvio: 'Pendente', mensalidades: m, marcado: false });
+                const c = line.split(';'); if (!c[0] || c[0].toUpperCase().includes("RA")) continue; 
+                const ra = c[0].replace(/\D/g, ''); if (window.alunos[ra]) continue; 
+                const m = []; for(let i=mI; i<=mF; i++) m.push({mes:i, ano:ano, pago:false, vencimento:`${ano}-${String(i).padStart(2,'0')}-10`}); 
+                const obj = { ra, nome: c[1]?.trim(), tel: c[2]?.replace(/\D/g,''), unidade: c[3]?.trim(), categoria: c[4]?.trim() || 'Extranet', controleEnvio: 'Pendente', mensalidades: m, marcado: false };
+                batch.set(doc(db, "alunos", ra), obj);
             } 
             await batch.commit(); location.reload();
         }; r.readAsText(input.files[0]); 
     };
 
-    window.excluirSelecionados = async () => { if (!confirm("Excluir?")) return; const batch = writeBatch(db); document.querySelectorAll('.chk-aluno:checked').forEach(chk => { const ra = chk.getAttribute('data-ra'); batch.delete(doc(db, "alunos", ra)); delete window.alunos[ra]; }); await batch.commit(); renderizar(); };
+    window.trocarTela = (id) => { 
+        document.querySelectorAll('.view-container').forEach(v => v.classList.remove('view-active')); 
+        document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active')); 
+        document.getElementById(id).classList.add('view-active'); 
+        event.currentTarget.classList.add('active'); 
+    };
+
+    window.fecharModal = () => document.getElementById('modal').style.display = 'none';
     window.toggleTodos = (el) => document.querySelectorAll('.chk-aluno').forEach(chk => chk.checked = el.checked);
+    function atualizarOpcoesFiltros() { 
+        const u = [...new Set(Object.values(window.alunos).map(a => a.unidade))].sort(); 
+        document.getElementById('filtroUnidade').innerHTML = '<option value="">Todas</option>' + u.map(x => `<option value="${x}">${x}</option>`).join(''); 
+    }
 </script>
 </body>
 </html>
