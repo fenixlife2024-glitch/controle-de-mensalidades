@@ -2,42 +2,58 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Plataforma Integrada</title>
+  <title>Plataforma Integrada - Admin</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
-    body { display: flex; height: 100vh; background: #f2f2f2; overflow: hidden; }
-    .sidebar { width: 190px; background: linear-gradient(180deg, #0f172a, #020617); color: white; display: flex; flex-direction: column; transition: width 0.25s ease; }
-    .sidebar.collapsed { width: 58px; }
-    .top { display: flex; align-items: center; justify-content: center; height: 50px; border-bottom: 1px solid rgba(255,255,255,0.08); cursor: pointer; }
-    .menu-btn { padding: 12px 16px; border: none; background: none; color: white; text-align: left; cursor: pointer; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; gap: 10px; white-space: nowrap; width: 100%; }
-    .menu-btn:hover, .menu-btn.active { background: rgba(255,255,255,0.1); }
-    .menu-btn.active { border-left: 4px solid #f97316; }
+    /* Estilo Base */
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+    body { display: flex; height: 100vh; background: #020617; overflow: hidden; }
+    
+    /* Sidebar */
+    .sidebar { width: 220px; background: #0f172a; color: white; display: flex; flex-direction: column; transition: width 0.3s ease; border-right: 1px solid rgba(255,255,255,0.1); }
+    .sidebar.collapsed { width: 60px; }
+    
+    .top { display: flex; align-items: center; justify-content: center; height: 60px; border-bottom: 1px solid rgba(255,255,255,0.1); cursor: pointer; background: rgba(0,0,0,0.2); }
+    
+    /* Botões do Menu */
+    .menu-btn { padding: 15px 20px; border: none; background: none; color: #94a3b8; text-align: left; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 12px; transition: all 0.2s; width: 100%; overflow: hidden; }
+    .menu-btn:hover { background: rgba(255,255,255,0.05); color: white; }
+    .menu-btn.active { background: rgba(249, 115, 22, 0.1); color: #f97316; border-left: 4px solid #f97316; }
+    
     .sidebar.collapsed .text { display: none; }
-    .content { flex: 1; background: #e5e5e5; position: relative; }
+    .sidebar.collapsed .menu-btn { justify-content: center; padding: 15px 0; }
+    
+    /* Área de Conteúdo */
+    .content { flex: 1; background: #f1f5f9; position: relative; }
     iframe { width: 100%; height: 100%; border: none; background: white; display: none; }
-    .placeholder { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #555; }
+    
+    .placeholder { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #64748b; text-align: center; }
+    .placeholder h2 { color: #0f172a; margin-bottom: 10px; }
   </style>
 </head>
 <body>
+
   <div class="sidebar" id="sidebar">
     <div class="top" onclick="toggleSidebar()"><span>☰</span></div>
     
-    <button class="menu-btn" onclick="abrirSistema('controle_de_cobranca.html', this)">
-      <span>💰</span><span class="text">Sistema de Cobrança</span>
+    <button class="menu-btn" onclick="abrirSistema('controle de cobrança.html', this)">
+      <span>💰</span><span class="text">Controle de Cobrança</span>
     </button>
 
-    <button class="menu-btn" onclick="abrirSistema('Teste.html', this)">
+    <button class="menu-btn" onclick="abrirSistema('teste.html.html', this)">
       <span>📊</span><span class="text">Gestão Financeira</span>
     </button>
 
-    <button class="menu-btn" onclick="abrirSistema('gerador_de_relatorios.html', this)">
+    <button class="menu-btn" onclick="abrirSistema('gerador_relatorios.html', this)">
       <span>📈</span><span class="text">Gerador de Relatórios</span>
     </button>
   </div>
 
   <div class="content">
-    <iframe id="frame"></iframe>
-    <div id="placeholder" class="placeholder">Selecione um sistema no menu</div>
+    <iframe id="frame" name="frameMain"></iframe>
+    <div id="placeholder" class="placeholder">
+      <h2>Plataforma Integrada</h2>
+      <p>Selecione um sistema no menu lateral para começar.</p>
+    </div>
   </div>
 
   <script>
@@ -46,26 +62,41 @@
     function abrirSistema(arquivo, btn) {
       const frame = document.getElementById("frame");
       const placeholder = document.getElementById("placeholder");
+      
+      // Ativa o botão visualmente
       document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
+      
+      // Mostra o iframe e carrega o arquivo
       placeholder.style.display = "none";
       frame.style.display = "block";
       frame.src = arquivo;
     }
 
-    function toggleSidebar() { document.getElementById("sidebar").classList.toggle("collapsed"); }
+    function toggleSidebar() { 
+      document.getElementById("sidebar").classList.toggle("collapsed"); 
+    }
 
+    // Comunicação entre os Sistemas (Ponte de Dados)
     window.addEventListener("message", (event) => {
+      // Recebe dados da Cobrança ou Financeiro
       if (event.data.type === "DATA_TRANSFER") {
         dadosCobrancaGlobal = event.data.payload;
+        console.log("Dados recebidos e armazenados na plataforma principal.");
       }
-      if (event.data.type === "REQUEST_DATA" && dadosCobrancaGlobal) {
-        document.getElementById("frame").contentWindow.postMessage({
-          type: "FILL_REPORT",
-          payload: dadosCobrancaGlobal
-        }, "*");
+
+      // Envia dados para o Gerador de Relatórios quando solicitado
+      if (event.data.type === "REQUEST_DATA") {
+        const frame = document.getElementById("frame");
+        if(frame && frame.contentWindow && dadosCobrancaGlobal) {
+          frame.contentWindow.postMessage({
+            type: "FILL_REPORT",
+            payload: dadosCobrancaGlobal
+          }, "*");
+        }
       }
     });
   </script>
+
 </body>
 </html>
