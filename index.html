@@ -2,36 +2,71 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Plataforma Recuperada</title>
+    <title>Plataforma de Gestão Integrada</title>
     <style>
-        body { margin: 0; display: flex; height: 100vh; font-family: sans-serif; background: #0f172a; color: white; }
-        .menu { width: 250px; background: #1e293b; padding: 20px; border-right: 1px solid #334155; }
-        .btn { display: block; width: 100%; padding: 12px; margin-bottom: 10px; background: #334155; color: #94a3b8; border: none; border-radius: 5px; cursor: pointer; text-align: left; }
-        .btn:hover { background: #475569; color: white; }
-        .content { flex: 1; background: white; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { display: flex; height: 100vh; background: #0f172a; color: white; overflow: hidden; }
+        
+        .sidebar { width: 260px; background: #1e293b; display: flex; flex-direction: column; border-right: 1px solid #334155; transition: 0.3s; flex-shrink: 0; }
+        .sidebar.collapsed { width: 70px; }
+        
+        .toggle-btn { padding: 20px; cursor: pointer; background: none; border: none; color: #f97316; font-size: 20px; text-align: left; }
+        .nav-btn { width: 100%; padding: 15px 20px; border: none; background: none; color: #94a3b8; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 15px; white-space: nowrap; }
+        .nav-btn:hover { background: #334155; color: white; }
+        .nav-btn.active { background: rgba(249, 115, 22, 0.1); color: #f97316; border-left: 4px solid #f97316; }
+        
+        .sidebar.collapsed .btn-text { display: none; }
+        .main { flex: 1; background: #f1f5f9; position: relative; }
         iframe { width: 100%; height: 100%; border: none; display: none; }
+        .welcome { height: 100%; display: flex; align-items: center; justify-content: center; color: #64748b; }
     </style>
 </head>
 <body>
-    <div class="menu">
-        <h2 style="color:#f97316; font-size: 18px;">MEU SISTEMA</h2><br>
-        <button class="btn" onclick="abrir('controle de cobrança.html')">💰 Cobrança</button>
-        <button class="btn" onclick="abrir('teste.html.html')">📊 Financeiro</button>
-        <button class="btn" onclick="abrir('gerador_relatorios.html')">📈 Relatórios</button>
-    </div>
-    <div class="content">
-        <iframe id="tela"></iframe>
-        <div id="aviso" style="color:#64748b; padding:50px; text-align:center;">
-            <h1>Sistema Online</h1><p>Selecione uma opção no menu lateral.</p>
+
+    <div class="sidebar" id="sidebar">
+        <button class="toggle-btn" onclick="document.getElementById('sidebar').classList.toggle('collapsed')">☰</button>
+        <div class="nav">
+            <button class="nav-btn" onclick="lancar('controle de cobrança.html', this)">
+                <span>💰</span> <span class="btn-text">Fluxo de Cobrança</span>
+            </button>
+            <button class="nav-btn" onclick="lancar('teste.html.html', this)">
+                <span>📊</span> <span class="btn-text">Gestão Financeira</span>
+            </button>
+            <button class="nav-btn" onclick="lancar('gerador_relatorios.html', this)">
+                <span>📈</span> <span class="btn-text">Gerador de Relatórios</span>
+            </button>
         </div>
     </div>
+
+    <div class="main">
+        <div id="status" class="welcome"><h2>Selecione um módulo</h2></div>
+        <iframe id="janela"></iframe>
+    </div>
+
     <script>
-        function abrir(url) {
-            document.getElementById('aviso').style.display = 'none';
-            const f = document.getElementById('tela');
-            f.style.display = 'block';
-            f.src = "./" + url + "?v=" + Date.now(); // Força o GitHub a atualizar
+        let memoriaDados = null;
+
+        function lancar(url, btn) {
+            const frame = document.getElementById('janela');
+            document.getElementById('status').style.display = 'none';
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            frame.style.display = 'block';
+            frame.src = "./" + url;
         }
+
+        // PONTE DE DADOS
+        window.addEventListener("message", (e) => {
+            if (e.data.type === "DATA_TRANSFER") {
+                memoriaDados = e.data.payload;
+            }
+            if (e.data.type === "REQUEST_DATA" && memoriaDados) {
+                document.getElementById('janela').contentWindow.postMessage({
+                    type: "FILL_REPORT",
+                    payload: memoriaDados
+                }, "*");
+            }
+        });
     </script>
 </body>
 </html>
