@@ -120,6 +120,10 @@
                     <input type="checkbox" id="checkRematricula" class="w-5 h-5 accent-orange cursor-pointer">
                     <label for="checkRematricula" class="text-sm font-bold cursor-pointer">Incluir Rematrícula (Emocional)</label>
                 </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] text-gray-400 font-bold uppercase">Vencimento da Entrada (Opcional)</label>
+                    <input type="date" id="dataVencimentoManual" class="w-full bg-slate-900 border border-gray-700 p-2 rounded outline-none text-white focus:border-orange">
+                </div>
                 <div class="flex justify-between gap-3 pt-4">
                     <button type="button" onclick="closeModal('modalAcordo')" class="text-gray-400 font-bold">Cancelar</button>
                     <button onclick="gerarEnviar()" class="bg-orange px-8 py-3 rounded font-black text-white uppercase text-xs shadow-lg">Enviar Proposta</button>
@@ -220,6 +224,7 @@
         window.prepararAcordo = (idx) => {
             window.idxAtivo = idx;
             document.getElementById('nomeAlunoAcordo').innerText = "Aluno: " + window.db_local[idx].nome;
+            document.getElementById('dataVencimentoManual').value = "";
             openModal('modalAcordo');
         };
 
@@ -231,9 +236,18 @@
             const parc = parseInt(document.getElementById('numParcelas').value);
             const vPM = document.getElementById('vlrParcelaManual').value;
             const remat = document.getElementById('checkRematricula').checked;
+            
+            const dataManual = document.getElementById('dataVencimentoManual').value;
+            let venc;
 
-            const dt = new Date(); dt.setDate(dt.getDate() + 4);
-            const venc = dt.toLocaleDateString('pt-BR');
+            if (dataManual) {
+                const [ano, mes, dia] = dataManual.split('-');
+                venc = `${dia}/${mes}/${ano}`;
+            } else {
+                const dt = new Date(); 
+                dt.setDate(dt.getDate() + 4);
+                venc = dt.toLocaleDateString('pt-BR');
+            }
 
             let msg = `Olá, *${a.nome}*! 👋\n\nIdentificamos uma oportunidade especial para regularizar sua situação na unidade *${a.unidade}*. Nosso objetivo é que você continue focado no seu crescimento!\n\n`;
             if(remat) msg += `🚀 *SEU SONHO NÃO PODE PARAR!*\nReativando agora, sua plataforma volta em até 7 dias úteis.\n\n`;
