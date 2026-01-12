@@ -6,75 +6,48 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
     body { display: flex; height: 100vh; background: #020617; overflow: hidden; }
-    
     .sidebar { width: 220px; background: #0f172a; color: white; display: flex; flex-direction: column; border-right: 1px solid rgba(255,255,255,0.1); }
-    .top { height: 60px; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: bold; font-size: 14px; color: #f97316; }
-    
-    .menu-btn { padding: 15px 20px; border: none; background: none; color: #94a3b8; text-align: left; cursor: pointer; width: 100%; display: flex; align-items: center; gap: 10px; transition: 0.2s; font-size: 14px; }
-    .menu-btn:hover { background: rgba(255,255,255,0.05); color: white; }
-    .menu-btn.active { background: rgba(249, 115, 22, 0.1); color: #f97316; border-left: 4px solid #f97316; }
-    
-    .content { flex: 1; position: relative; background: #f1f5f9; }
-    iframe { width: 100%; height: 100%; border: none; display: none; background: white; }
-    .placeholder { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #64748b; text-align: center; }
+    .menu-btn { padding: 15px 20px; border: none; background: none; color: #94a3b8; text-align: left; cursor: pointer; width: 100%; display: flex; align-items: center; gap: 10px; font-size: 14px; }
+    .menu-btn:hover, .menu-btn.active { background: rgba(249, 115, 22, 0.1); color: #f97316; }
+    .content { flex: 1; background: white; }
+    iframe { width: 100%; height: 100%; border: none; display: none; }
+    .placeholder { height: 100%; display: flex; align-items: center; justify-content: center; color: #64748b; }
   </style>
 </head>
 <body>
-
   <div class="sidebar">
-    <div class="top">PLATAFORMA ADMIN</div>
+    <div style="padding:20px; font-weight:bold; color:#f97316;">SISTEMA</div>
     
-    <button class="menu-btn" onclick="abrir('cobranca.html', this)">
-      <span>💰</span> Cobrança
-    </button>
-
-    <button class="menu-btn" onclick="abrir('teste.html', this)">
-      <span>📊</span> Gestão Financeira
-    </button>
-
-    <button class="menu-btn" onclick="abrir('relatorios.html', this)">
-      <span>📈</span> Relatórios
-    </button>
+    <button class="menu-btn" onclick="abrir('controle de cobrança.html', this)">💰 Cobrança</button>
+    <button class="menu-btn" onclick="abrir('teste.html.html', this)">📊 Financeiro</button>
+    <button class="menu-btn" onclick="abrir('gerador_relatorios.html', this)">📈 Relatórios</button>
   </div>
 
   <div class="content">
-    <iframe id="frame" name="frameMain"></iframe>
-    <div id="placeholder" class="placeholder">
-      <h2>Bem-vindo</h2>
-      <p>Selecione um sistema no menu lateral.</p>
-    </div>
+    <iframe id="main-frame"></iframe>
+    <div id="msg" class="placeholder">Selecione um módulo</div>
   </div>
 
   <script>
-    let dadosCobrancaGlobal = null;
+    let dadosCache = null;
 
     function abrir(url, btn) {
-      const frame = document.getElementById("frame");
-      const placeholder = document.getElementById("placeholder");
-      
+      const frame = document.getElementById("main-frame");
       document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      
-      placeholder.style.display = "none";
+      document.getElementById("msg").style.display = "none";
       frame.style.display = "block";
-      
-      // Adiciona um parâmetro para evitar cache do GitHub
-      frame.src = url + "?v=" + Date.now();
+      // O segredo do GitHub Pages: caminho relativo './'
+      frame.src = "./" + url;
     }
 
-    window.addEventListener("message", (event) => {
-      if (event.data.type === "DATA_TRANSFER") {
-        dadosCobrancaGlobal = event.data.payload;
-        console.log("Dados recebidos da cobrança.");
-      }
-      if (event.data.type === "REQUEST_DATA") {
-        const frame = document.getElementById("frame");
-        if(frame.contentWindow && dadosCobrancaGlobal) {
-          frame.contentWindow.postMessage({
-            type: "FILL_REPORT",
-            payload: dadosCobrancaGlobal
-          }, "*");
-        }
+    window.addEventListener("message", (e) => {
+      if (e.data.type === "DATA_TRANSFER") dadosCache = e.data.payload;
+      if (e.data.type === "REQUEST_DATA" && dadosCache) {
+        document.getElementById("main-frame").contentWindow.postMessage({
+          type: "FILL_REPORT",
+          payload: dadosCache
+        }, "*");
       }
     });
   </script>
