@@ -1,66 +1,88 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <title>Plataforma Integrada</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: sans-serif; }
-    body { display: flex; height: 100vh; background: #0f172a; color: white; margin: 0; }
-    .sidebar { width: 240px; background: #1e293b; border-right: 1px solid #334155; display: flex; flex-direction: column; }
-    .btn { padding: 15px; border: none; background: none; color: #94a3b8; text-align: left; cursor: pointer; border-bottom: 1px solid #334155; }
-    .btn:hover { background: #334155; color: white; }
-    .btn.active { border-left: 4px solid #f97316; color: #f97316; background: #1e293b; }
-    .main { flex: 1; background: #f1f5f9; position: relative; }
-    iframe { width: 100%; height: 100%; border: none; display: none; }
-    .error-msg { display: none; color: #ef4444; padding: 20px; text-align: center; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plataforma Integrada</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { display: flex; height: 100vh; background-color: #0f172a; color: white; overflow: hidden; }
+
+        /* Menu Lateral */
+        .sidebar { width: 260px; background-color: #1e293b; display: flex; flex-direction: column; border-right: 1px solid #334155; }
+        .sidebar-header { padding: 30px 20px; text-align: center; font-weight: bold; font-size: 1.2rem; color: #f97316; border-bottom: 1px solid #334155; }
+        
+        .nav-buttons { flex: 1; padding: 20px 0; }
+        .nav-btn { width: 100%; padding: 15px 25px; border: none; background: none; color: #94a3b8; text-align: left; cursor: pointer; font-size: 15px; display: flex; align-items: center; gap: 12px; transition: 0.2s; }
+        .nav-btn:hover { background-color: #334155; color: white; }
+        .nav-btn.active { background-color: rgba(249, 115, 22, 0.1); color: #f97316; border-left: 4px solid #f97316; }
+
+        /* Área de Conteúdo */
+        .content { flex: 1; background-color: #f8fafc; position: relative; }
+        iframe { width: 100%; height: 100%; border: none; display: none; }
+        
+        .welcome-screen { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #64748b; text-align: center; }
+        .welcome-screen h2 { color: #1e293b; margin-bottom: 10px; }
+    </style>
 </head>
 <body>
 
-  <div class="sidebar">
-    <div style="padding:20px; font-weight:bold; color:#f97316; text-align:center;">MENU PRINCIPAL</div>
-    
-    <button class="btn" onclick="forcarAbrir('controle de cobrança.html', this)">💰 Cobrança</button>
-    <button class="btn" onclick="forcarAbrir('teste.html.html', this)">📊 Financeiro</button>
-    <button class="btn" onclick="forcarAbrir('gerador_relatorios.html', this)">📈 Relatórios</button>
-  </div>
+    <div class="sidebar">
+        <div class="sidebar-header">GERENCIAMENTO</div>
+        <div class="nav-buttons">
+            <button class="nav-btn" onclick="carregarSistema('controle de cobrança.html', this)">
+                <span>💰</span> Controle de Cobrança
+            </button>
+            
+            <button class="nav-btn" onclick="carregarSistema('teste.html.html', this)">
+                <span>📊</span> Gestão Financeira
+            </button>
 
-  <div class="main">
-    <div id="loading" style="display:none; color:#64748b; padding:20px;">Carregando sistema...</div>
-    <iframe id="app-frame" onload="document.getElementById('loading').style.display='none'"></iframe>
-  </div>
+            <button class="nav-btn" onclick="carregarSistema('gerador_relatorios.html', this)">
+                <span>📈</span> Gerador de Relatórios
+            </button>
+        </div>
+    </div>
 
-  <script>
-    function forcarAbrir(arquivo, elemento) {
-      const frame = document.getElementById("app-frame");
-      const loading = document.getElementById("loading");
-      
-      // Estética do botão
-      document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
-      elemento.classList.add('active');
-      
-      loading.style.display = "block";
-      frame.style.display = "block";
+    <div class="content">
+        <div id="welcome" class="welcome-screen">
+            <h2>Bem-vindo à Plataforma</h2>
+            <p>Selecione um dos módulos ao lado para começar.</p>
+        </div>
+        <iframe id="display-frame"></iframe>
+    </div>
 
-      // O segredo: Forçamos o caminho absoluto baseado na URL atual para evitar erro de subpasta
-      const currentPath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'));
-      const urlFinal = window.location.origin + currentPath + "/" + arquivo;
-      
-      console.log("Tentando abrir:", urlFinal);
-      frame.src = urlFinal;
-    }
+    <script>
+        // Função para carregar os arquivos no Iframe
+        function carregarSistema(url, btn) {
+            const frame = document.getElementById('display-frame');
+            const welcome = document.getElementById('welcome');
+            
+            // Atualiza botões
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
 
-    // Comunicação de dados (Ponte)
-    let bancoDados = null;
-    window.addEventListener("message", (e) => {
-      if (e.data.type === "DATA_TRANSFER") bancoDados = e.data.payload;
-      if (e.data.type === "REQUEST_DATA" && bancoDados) {
-        document.getElementById("app-frame").contentWindow.postMessage({
-          type: "FILL_REPORT",
-          payload: bancoDados
-        }, "*");
-      }
-    });
-  </script>
+            // Troca visualização
+            welcome.style.display = 'none';
+            frame.style.display = 'block';
+            
+            // Adiciona timestamp para evitar cache do GitHub e garantir carregamento atualizado
+            frame.src = url + "?t=" + new Date().getTime();
+        }
+
+        // Sistema de "Ponte" para comunicação entre os arquivos (opcional)
+        let cacheDeDados = null;
+        window.addEventListener("message", (event) => {
+            if (event.data.type === "DATA_TRANSFER") {
+                cacheDeDados = event.data.payload;
+            }
+            if (event.data.type === "REQUEST_DATA" && cacheDeDados) {
+                document.getElementById('display-frame').contentWindow.postMessage({
+                    type: "FILL_REPORT",
+                    payload: cacheDeDados
+                }, "*");
+            }
+        });
+    </script>
 </body>
 </html>
