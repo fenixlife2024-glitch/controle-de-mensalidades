@@ -3,150 +3,73 @@
 <head>
   <meta charset="UTF-8" />
   <title>Plataforma Integrada</title>
-
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: Arial, sans-serif;
-    }
-
-    body {
-      display: flex;
-      height: 100vh;
-      background: #f2f2f2;
-    }
-
-    /* ======================
-       SIDEBAR
-       ====================== */
-    .sidebar {
-      width: 190px;
-      background: linear-gradient(180deg, #0f172a, #020617);
-      color: white;
-      display: flex;
-      flex-direction: column;
-      transition: width 0.25s ease;
-    }
-
-    .sidebar.collapsed {
-      width: 58px;
-    }
-
-    /* TOPO */
-    .top {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 50px;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
-      cursor: pointer;
-    }
-
-    .top span {
-      font-size: 20px;
-    }
-
-    /* MENU */
-    .menu-btn {
-      padding: 12px 16px;
-      border: none;
-      background: none;
-      color: white;
-      text-align: left;
-      cursor: pointer;
-      font-size: 14px;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      white-space: nowrap;
-    }
-
-    .menu-btn span.text {
-      transition: opacity 0.2s ease;
-    }
-
-    .sidebar.collapsed .menu-btn span.text {
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    .menu-btn:hover {
-      background: rgba(255,255,255,0.1);
-    }
-
-    /* ======================
-       CONTEÚDO
-       ====================== */
-    .content {
-      flex: 1;
-      background: #e5e5e5;
-      position: relative;
-    }
-
-    iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-      background: white;
-      display: none;
-    }
-
-    .placeholder {
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      color: #555;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+    body { display: flex; height: 100vh; background: #f2f2f2; overflow: hidden; }
+    .sidebar { width: 190px; background: linear-gradient(180deg, #0f172a, #020617); color: white; display: flex; flex-direction: column; transition: width 0.25s ease; }
+    .sidebar.collapsed { width: 58px; }
+    .top { display: flex; align-items: center; justify-content: center; height: 50px; border-bottom: 1px solid rgba(255,255,255,0.08); cursor: pointer; }
+    .menu-btn { padding: 12px 16px; border: none; background: none; color: white; text-align: left; cursor: pointer; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; gap: 10px; white-space: nowrap; width: 100%; }
+    .menu-btn:hover, .menu-btn.active { background: rgba(255,255,255,0.1); }
+    .menu-btn.active { border-left: 4px solid #f97316; }
+    .sidebar.collapsed .text { display: none; }
+    .content { flex: 1; background: #e5e5e5; position: relative; }
+    iframe { width: 100%; height: 100%; border: none; background: white; display: none; }
+    .placeholder { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #555; }
   </style>
 </head>
-
 <body>
-
   <div class="sidebar" id="sidebar">
-
-    <div class="top" onclick="toggleSidebar()">
-      <span>☰</span>
-    </div>
-
-    <button class="menu-btn" onclick="abrirSistema('controle de cobrança.html')">
-      <span>💰</span>
-      <span class="text">Sistema de Cobrança</span>
+    <div class="top" onclick="toggleSidebar()"><span>☰</span></div>
+    
+    <button class="menu-btn" onclick="abrirSistema('controle de cobrança.html', this)">
+      <span>💰</span><span class="text">Sistema de Cobrança</span>
     </button>
 
-    <button class="menu-btn" onclick="abrirSistema('Teste.html')">
-      <span>📊</span>
-      <span class="text">Gestão Financeira</span>
+    <button class="menu-btn" onclick="abrirSistema('Teste.html', this)">
+      <span>📊</span><span class="text">Gestão Financeira</span>
     </button>
 
+    <button class="menu-btn" onclick="abrirSistema('gerador de relatórios.html', this)">
+      <span>📈</span><span class="text">Gerador de Relatórios</span>
+    </button>
   </div>
 
   <div class="content">
     <iframe id="frame"></iframe>
-
-    <div id="placeholder" class="placeholder">
-      Selecione um sistema no menu
-    </div>
+    <div id="placeholder" class="placeholder">Selecione um sistema no menu</div>
   </div>
 
   <script>
-    function abrirSistema(arquivo) {
+    let dadosCobrancaGlobal = null;
+
+    function abrirSistema(arquivo, btn) {
       const frame = document.getElementById("frame");
       const placeholder = document.getElementById("placeholder");
-
+      document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
       placeholder.style.display = "none";
       frame.style.display = "block";
       frame.src = arquivo;
     }
 
-    function toggleSidebar() {
-      document.getElementById("sidebar").classList.toggle("collapsed");
-    }
-  </script>
+    function toggleSidebar() { document.getElementById("sidebar").classList.toggle("collapsed"); }
 
+    // Ponte de comunicação entre os Iframes
+    window.addEventListener("message", (event) => {
+      if (event.data.type === "DATA_TRANSFER") {
+        dadosCobrancaGlobal = event.data.payload;
+      }
+      if (event.data.type === "REQUEST_DATA" && dadosCobrancaGlobal) {
+        const frame = document.getElementById("frame");
+        if(frame.contentWindow) {
+          frame.contentWindow.postMessage({
+            type: "FILL_REPORT",
+            payload: dadosCobrancaGlobal
+          }, "*");
+        }
+      }
+    });
+  </script>
 </body>
 </html>
