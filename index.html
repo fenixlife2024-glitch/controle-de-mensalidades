@@ -7,42 +7,42 @@
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
     body { display: flex; height: 100vh; background: #020617; overflow: hidden; }
     
-    /* Sidebar */
     .sidebar { width: 220px; background: #0f172a; color: white; display: flex; flex-direction: column; border-right: 1px solid rgba(255,255,255,0.1); }
-    .top { height: 60px; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: bold; }
+    .top { height: 60px; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: bold; font-size: 14px; color: #f97316; }
     
-    /* Botões */
-    .menu-btn { padding: 15px 20px; border: none; background: none; color: #94a3b8; text-align: left; cursor: pointer; width: 100%; display: flex; align-items: center; gap: 10px; transition: 0.2s; }
+    .menu-btn { padding: 15px 20px; border: none; background: none; color: #94a3b8; text-align: left; cursor: pointer; width: 100%; display: flex; align-items: center; gap: 10px; transition: 0.2s; font-size: 14px; }
     .menu-btn:hover { background: rgba(255,255,255,0.05); color: white; }
     .menu-btn.active { background: rgba(249, 115, 22, 0.1); color: #f97316; border-left: 4px solid #f97316; }
     
-    /* Área do Sistema */
-    .content { flex: 1; position: relative; background: white; }
-    iframe { width: 100%; height: 100%; border: none; display: none; }
-    .placeholder { height: 100%; display: flex; align-items: center; justify-content: center; color: #64748b; }
+    .content { flex: 1; position: relative; background: #f1f5f9; }
+    iframe { width: 100%; height: 100%; border: none; display: none; background: white; }
+    .placeholder { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #64748b; text-align: center; }
   </style>
 </head>
 <body>
 
   <div class="sidebar">
-    <div class="top">MENU PLATAFORMA</div>
+    <div class="top">PLATAFORMA ADMIN</div>
     
-    <button class="menu-btn" onclick="abrir('controle de cobrança.html', this)">
-      <span>💰</span> Controle de Cobrança
+    <button class="menu-btn" onclick="abrir('cobranca.html', this)">
+      <span>💰</span> Cobrança
     </button>
 
-    <button class="menu-btn" onclick="abrir('teste.html.html', this)">
+    <button class="menu-btn" onclick="abrir('teste.html', this)">
       <span>📊</span> Gestão Financeira
     </button>
 
-    <button class="menu-btn" onclick="abrir('gerador_relatorios.html', this)">
-      <span>📈</span> Gerador de Relatórios
+    <button class="menu-btn" onclick="abrir('relatorios.html', this)">
+      <span>📈</span> Relatórios
     </button>
   </div>
 
   <div class="content">
-    <iframe id="frame"></iframe>
-    <div id="placeholder" class="placeholder"><h2>Selecione um sistema ao lado</h2></div>
+    <iframe id="frame" name="frameMain"></iframe>
+    <div id="placeholder" class="placeholder">
+      <h2>Bem-vindo</h2>
+      <p>Selecione um sistema no menu lateral.</p>
+    </div>
   </div>
 
   <script>
@@ -57,19 +57,24 @@
       
       placeholder.style.display = "none";
       frame.style.display = "block";
-      frame.src = url;
+      
+      // Adiciona um parâmetro para evitar cache do GitHub
+      frame.src = url + "?v=" + Date.now();
     }
 
-    // Escuta mensagens entre os sistemas (Ponte de Dados)
     window.addEventListener("message", (event) => {
       if (event.data.type === "DATA_TRANSFER") {
         dadosCobrancaGlobal = event.data.payload;
+        console.log("Dados recebidos da cobrança.");
       }
-      if (event.data.type === "REQUEST_DATA" && dadosCobrancaGlobal) {
-        document.getElementById("frame").contentWindow.postMessage({
-          type: "FILL_REPORT",
-          payload: dadosCobrancaGlobal
-        }, "*");
+      if (event.data.type === "REQUEST_DATA") {
+        const frame = document.getElementById("frame");
+        if(frame.contentWindow && dadosCobrancaGlobal) {
+          frame.contentWindow.postMessage({
+            type: "FILL_REPORT",
+            payload: dadosCobrancaGlobal
+          }, "*");
+        }
       }
     });
   </script>
