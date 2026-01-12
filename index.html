@@ -2,87 +2,36 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plataforma Integrada</title>
+    <title>Plataforma Recuperada</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { display: flex; height: 100vh; background-color: #0f172a; color: white; overflow: hidden; }
-
-        /* Menu Lateral */
-        .sidebar { width: 260px; background-color: #1e293b; display: flex; flex-direction: column; border-right: 1px solid #334155; }
-        .sidebar-header { padding: 30px 20px; text-align: center; font-weight: bold; font-size: 1.2rem; color: #f97316; border-bottom: 1px solid #334155; }
-        
-        .nav-buttons { flex: 1; padding: 20px 0; }
-        .nav-btn { width: 100%; padding: 15px 25px; border: none; background: none; color: #94a3b8; text-align: left; cursor: pointer; font-size: 15px; display: flex; align-items: center; gap: 12px; transition: 0.2s; }
-        .nav-btn:hover { background-color: #334155; color: white; }
-        .nav-btn.active { background-color: rgba(249, 115, 22, 0.1); color: #f97316; border-left: 4px solid #f97316; }
-
-        /* Área de Conteúdo */
-        .content { flex: 1; background-color: #f8fafc; position: relative; }
+        body { margin: 0; display: flex; height: 100vh; font-family: sans-serif; background: #0f172a; color: white; }
+        .menu { width: 250px; background: #1e293b; padding: 20px; border-right: 1px solid #334155; }
+        .btn { display: block; width: 100%; padding: 12px; margin-bottom: 10px; background: #334155; color: #94a3b8; border: none; border-radius: 5px; cursor: pointer; text-align: left; }
+        .btn:hover { background: #475569; color: white; }
+        .content { flex: 1; background: white; }
         iframe { width: 100%; height: 100%; border: none; display: none; }
-        
-        .welcome-screen { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #64748b; text-align: center; }
-        .welcome-screen h2 { color: #1e293b; margin-bottom: 10px; }
     </style>
 </head>
 <body>
-
-    <div class="sidebar">
-        <div class="sidebar-header">GERENCIAMENTO</div>
-        <div class="nav-buttons">
-            <button class="nav-btn" onclick="carregarSistema('controle de cobrança.html', this)">
-                <span>💰</span> Controle de Cobrança
-            </button>
-            
-            <button class="nav-btn" onclick="carregarSistema('teste.html.html', this)">
-                <span>📊</span> Gestão Financeira
-            </button>
-
-            <button class="nav-btn" onclick="carregarSistema('gerador_relatorios.html', this)">
-                <span>📈</span> Gerador de Relatórios
-            </button>
-        </div>
+    <div class="menu">
+        <h2 style="color:#f97316; font-size: 18px;">MEU SISTEMA</h2><br>
+        <button class="btn" onclick="abrir('controle de cobrança.html')">💰 Cobrança</button>
+        <button class="btn" onclick="abrir('teste.html.html')">📊 Financeiro</button>
+        <button class="btn" onclick="abrir('gerador_relatorios.html')">📈 Relatórios</button>
     </div>
-
     <div class="content">
-        <div id="welcome" class="welcome-screen">
-            <h2>Bem-vindo à Plataforma</h2>
-            <p>Selecione um dos módulos ao lado para começar.</p>
+        <iframe id="tela"></iframe>
+        <div id="aviso" style="color:#64748b; padding:50px; text-align:center;">
+            <h1>Sistema Online</h1><p>Selecione uma opção no menu lateral.</p>
         </div>
-        <iframe id="display-frame"></iframe>
     </div>
-
     <script>
-        // Função para carregar os arquivos no Iframe
-        function carregarSistema(url, btn) {
-            const frame = document.getElementById('display-frame');
-            const welcome = document.getElementById('welcome');
-            
-            // Atualiza botões
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-
-            // Troca visualização
-            welcome.style.display = 'none';
-            frame.style.display = 'block';
-            
-            // Adiciona timestamp para evitar cache do GitHub e garantir carregamento atualizado
-            frame.src = url + "?t=" + new Date().getTime();
+        function abrir(url) {
+            document.getElementById('aviso').style.display = 'none';
+            const f = document.getElementById('tela');
+            f.style.display = 'block';
+            f.src = "./" + url + "?v=" + Date.now(); // Força o GitHub a atualizar
         }
-
-        // Sistema de "Ponte" para comunicação entre os arquivos (opcional)
-        let cacheDeDados = null;
-        window.addEventListener("message", (event) => {
-            if (event.data.type === "DATA_TRANSFER") {
-                cacheDeDados = event.data.payload;
-            }
-            if (event.data.type === "REQUEST_DATA" && cacheDeDados) {
-                document.getElementById('display-frame').contentWindow.postMessage({
-                    type: "FILL_REPORT",
-                    payload: cacheDeDados
-                }, "*");
-            }
-        });
     </script>
 </body>
 </html>
