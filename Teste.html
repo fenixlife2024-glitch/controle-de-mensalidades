@@ -31,13 +31,11 @@
         .view-container { flex-grow: 1; display: none; flex-direction: column; padding: 25px; overflow-y: auto; height: 100vh; box-sizing: border-box; transition: padding 0.3s ease; }
         .view-active { display: flex; }
         
-        /* Ajuste na barra de configuração para acomodar filtros múltiplos */
         .config-bar { background: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #e2e8f0; display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; align-items: flex-end; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         .input-group { display: flex; flex-direction: column; gap: 5px; }
         label { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #64748b; }
         .form-control { padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; outline: none; width: 100%; box-sizing: border-box; }
         
-        /* Estilo para selects múltiplos */
         select[multiple].form-control { height: 60px; padding: 4px; }
 
         .dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
@@ -144,7 +142,7 @@
             </select>
         </div>
         <div class="input-group"><label>Categoria</label><select id="filtroCategoria" class="form-control" onchange="renderizar(); renderizarPainel();"><option value="">Todas</option><option value="PTC">PTC</option><option value="Extranet">Extranet</option></select></div>
-        <div class="input-group"><label>Prazo 9% Off</label><input type="text" id="prazoCampanha" class="form-control" value="05/02" oninput="renderizar()"></div>
+        <div class="input-group"><label>Prazo 9% Off</label><input type="text" id="prazoCampanha" class="form-control" value="08/01" oninput="renderizar()"></div>
         <div class="input-group"><label style="color:var(--accent)">Importar CSV</label><input type="file" id="csvInput" accept=".csv" class="form-control" onchange="importarCSV(this)"></div>
     </div>
 
@@ -364,12 +362,10 @@
         } catch (e) { alert("Erro ao salvar: " + e.message); }
     }
 
-    // UPGRADE: Renderização com suporte a multi-filtros
     window.renderizar = function() {
         const t = document.getElementById('corpoTabela');
         const b = document.getElementById('busca').value.toLowerCase();
         
-        // Coletar múltiplos valores dos selects
         const fUni = Array.from(document.getElementById('filtroUnidade').selectedOptions).map(opt => opt.value);
         const fStatus = Array.from(document.getElementById('filtroStatusEnvio').selectedOptions).map(opt => opt.value);
         
@@ -378,15 +374,11 @@
         
         const lista = Object.values(window.alunos).filter(a => {
             const status = a.controleEnvio || 'Pendente';
-            
-            // Lógica de Multi-seleção: Se nada estiver selecionado ou 'Todas', ignorar filtro
             const matchUni = fUni.length === 0 || fUni.includes(a.unidade);
             const matchStatusEnvio = fStatus.length === 0 || fStatus.includes(status);
-            
             const matchCat = (!fCat || a.categoria === fCat);
             const matchBusca = (a.nome?.toLowerCase().includes(b) || a.ra.includes(b));
             const matchMarcado = (fMarcado === 'todos' || (fMarcado === 'marcados' && a.marcado));
-            
             return matchUni && matchStatusEnvio && matchCat && matchBusca && matchMarcado;
         }).sort((x,y) => x.nome.localeCompare(y.nome));
 
@@ -395,7 +387,6 @@
             const status = a.controleEnvio || 'Pendente';
             const tr = document.createElement('tr');
             tr.className = status==='Pago'?'row-pago':status==='Enviado'?'row-enviado':status==='Número Inválido'?'row-invalido':'';
-            
             const classeNome = a.docPendente ? 'class="nome-doc-pendente"' : '';
 
             tr.innerHTML = `
@@ -414,13 +405,12 @@
                     </select>
                 </td>
                 <td><a class="btn btn-zap" href="https://wa.me/55${a.tel}?text=${encodeURIComponent(gerarTextoZap(a))}" target="_blank" onclick="alterarStatus('${a.ra}', 'Enviado')">📱 Enviar</a></td>
-                <td><a class="btn" style="background:#8b5cf6; color:white;" href="https://wa.me/55${a.tel}?text=${encodeURIComponent(gerarTexto9Off(a))}" target="_blank">💎 9% Off</a></td>`;
+                <td><a class="btn" style="background:#8b5cf6; color:white;" href="https://wa.me/55${a.tel}?text=${encodeURIComponent(gerarTexto9Off(a))}" target="_blank">💎 Lembrete</a></td>`;
             t.appendChild(tr);
         });
         document.getElementById('contador').innerText = `${lista.length} Clientes`;
     }
 
-    // UPGRADE: Novas funções para suporte a lote
     window.abrirModalLote = function() {
         const selecionados = document.querySelectorAll('.chk-aluno:checked');
         if(selecionados.length === 0) return alert("Selecione os alunos na tabela primeiro.");
@@ -433,10 +423,8 @@
         const mesAlvo = parseInt(document.getElementById('loteMes').value);
         const novaData = document.getElementById('loteData').value;
         const selecionados = document.querySelectorAll('.chk-aluno:checked');
-        
         if(!novaData) return alert("Escolha uma data válida.");
         if(!confirm(`Deseja alterar o vencimento do mês ${mesAlvo} para ${novaData} em ${selecionados.length} alunos?`)) return;
-
         const batch = writeBatch(db);
         selecionados.forEach(chk => {
             const ra = chk.getAttribute('data-ra');
@@ -447,39 +435,81 @@
                 batch.update(doc(db, "alunos", ra), { mensalidades: aluno.mensalidades });
             }
         });
-
         await batch.commit();
         alert("Vencimentos atualizados!");
         fecharModalLote();
         renderizar();
     }
 
-    function gerarTextoZap(aluno) {
+    // LÓGICA DE MENSAGENS ATUALIZADA (ENVIAR E LEMBRETE)
+    window.gerarTextoZap = function(aluno) {
         const hoje = new Date(); hoje.setHours(0,0,0,0);
-        const mensalidade = aluno.mensalidades?.find(m => !m.pago);
-        if (!mensalidade) return `Olá ${aluno.nome}, identificamos que você está em dia com suas mensalidades!`;
-        const dataVenc = new Date(mensalidade.vencimento + 'T00:00:00');
-        const mesExtenso = nomesMesesLongos[mensalidade.mes];
-        const anoRef = document.getElementById('anoRef').value;
-        const termo = (aluno.controleEnvio === 'Enviado') ? 'ainda está' : 'já está';
+        const mensalidadeAtual = aluno.mensalidades?.find(m => !m.pago);
+        if (!mensalidadeAtual) return `Olá, ${aluno.nome}! Sua situação está regularizada. ✅`;
 
-        if (hoje > dataVenc) {
-            const diffDays = Math.ceil(Math.abs(hoje - dataVenc) / (1000 * 60 * 60 * 24));
-            return `Olá ${aluno.nome}, tudo bem? Notamos que a sua mensalidade de ${mesExtenso} está em atraso há ${diffDays} dias. Precisamos regularizar sua situação no portal para evitar suspensão de serviços. Caso já tenha pago, desconsidere esta mensagem.`;
+        const [anoV, mesV, diaV] = mensalidadeAtual.vencimento.split('-');
+        const dataVencOriginal = new Date(anoV, mesV - 1, diaV); dataVencOriginal.setHours(0,0,0,0);
+        const mesExtenso = nomesMesesLongos[mensalidadeAtual.mes];
+        
+        const prazoConfigurado = document.getElementById('prazoCampanha').value; 
+        const [diaP, mesP] = prazoConfigurado.split('/');
+        const dataLimiteDesconto = new Date(document.getElementById('anoRef').value, parseInt(mesP) - 1, parseInt(diaP));
+        dataLimiteDesconto.setHours(0,0,0,0);
+
+        const mesesEmAtraso = aluno.mensalidades
+            .filter(m => !m.pago && m.mes < mensalidadeAtual.mes)
+            .map(m => nomesMesesLongos[m.mes]);
+
+        let texto = "";
+
+        if (mensalidadeAtual.mes === 1 || mensalidadeAtual.mes === 7) {
+            texto = `Olá, ${aluno.nome}! Tudo bem? 🎓\n\nUm novo semestre está batendo à porta e com ele novas oportunidades de aprendizado e crescimento! Seu sonho da graduação é o nosso combustível e queremos ver você brilhando em mais essa etapa. 🌟\n\nPara garantir que você não perca nenhum momento dessa evolução e siga firme na sua jornada acadêmica, estamos enviando o seu boleto de *${mesExtenso}* (referente à sua renovação).`;
+            if (hoje <= dataLimiteDesconto) {
+                texto += `\n\n💰 *Lembre-se do seu benefício:*\nEfetuando o pagamento até o dia *${prazoConfigurado}*, você garante seu *desconto de pontualidade de 9% OFF*. Aproveite essa oportunidade para investir no seu futuro com economia!`;
+            }
+            texto += `\n\nO pagamento deste boleto é o que oficializa sua jornada neste novo semestre e permite que você continue acessando todos os conteúdos e atividades sem interrupções.`;
+            if (hoje > dataLimiteDesconto) texto += ` Lembre-se que o vencimento original é dia *${diaV}/${mesV}*.`;
+        } else {
+            if (hoje > dataLimiteDesconto && hoje <= dataVencOriginal) {
+                texto = `Olá, ${aluno.nome}! 🎓\n\nPassando para avisar que o prazo para o seu *desconto de pontualidade* de ${mesExtenso} encerrou no dia *${prazoConfigurado}*.\n\nMas não se preocupe: seu boleto continua disponível e o vencimento original é apenas em *${diaV}/${mesV}*. Você ainda pode efetuar o pagamento pelo valor integral até essa data para evitar juros após o vencimento.`;
+            } else if (hoje <= dataLimiteDesconto) {
+                texto = `Olá, ${aluno.nome}! Tudo bem? 🎓\n\nInformamos que o seu boleto de *${mesExtenso}* já está disponível.\n\n💡 *Prazos:*\n• Até *${prazoConfigurado}*: Pagamento com desconto (9% OFF).\n• Até *${diaV}/${mesV}*: Vencimento original (valor integral).`;
+            } else {
+                const diff = Math.ceil(Math.abs(hoje - dataVencOriginal) / (1000 * 60 * 60 * 24));
+                texto = `Olá, ${aluno.nome}! Sua mensalidade de *${mesExtenso}* está pendente há ${diff} dias. Por favor, regularize no portal para evitar encargos adicionais.`;
+            }
         }
-        if (mensalidade.mes === 1 || mensalidade.mes === 7) {
-            const sem = mensalidade.mes === 1 ? '1' : '2';
-            return `🚀 Olá ${aluno.nome}, Não Pare de Evoluir!\n\nSua próxima conquista está esperando! A rematrícula ${anoRef}.${sem} ${termo} liberada.\n\n👉 Pague o Boleto de ${mesExtenso} anexo e automaticamente ative sua vaga!\n\nNão deixe para a última hora. Vamos juntos para ${anoRef}! 🚀`;
+
+        if (mesesEmAtraso.length > 0) {
+            texto += `\n\n---\n⚠️ *Ponto de Atenção:*\nNotamos que as mensalidades de *${mesesEmAtraso.join(' e ')}* ainda constam em aberto. É importante regularizá-las para evitar que o saldo devedor se acumule e possa dificultar sua renovação de matrícula ao final do semestre.`;
         }
-        return `Olá ${aluno.nome}, tudo bem? \n\n🚀Passando para informar que o boleto de ${mesExtenso} ${termo} disponível em sua plataforma. \n\n👉Siga as orientações: \n👉Clique no ítem financeiro; \n👉Mensalidades e serviços; \n👉Selecione Pagar; Escolha Boleto, Pix ou Cartão. \n\n👉Dúvidas? Tutorial: https://www.youtube.com/watch?v=vcaDMgU-yg0`;
+
+        texto += `\n\nO boleto segue em anexo! 📄`;
+        return texto;
     }
 
-    function gerarTexto9Off(aluno) {
-        const prazo = document.getElementById('prazoCampanha').value;
-        return `Olá ${aluno.nome}, 🌟\n\nIdentificamos que você ainda não aproveitou o seu BENEFÍCIO de Pontualidade! \n\nEfetue o pagamento da sua mensalidade até o dia *${prazo}* e garanta automaticamente *9% de DESCONTO* no valor da parcela. \n\nAproveite para economizar! Qualquer dúvida, estamos à disposição.`;
+    window.gerarTexto9Off = function(aluno) {
+        const hoje = new Date(); hoje.setHours(0,0,0,0);
+        const prazoConfigurado = document.getElementById('prazoCampanha').value; 
+        const [diaP, mesP] = prazoConfigurado.split('/');
+        const dataLimiteDesconto = new Date(document.getElementById('anoRef').value, parseInt(mesP) - 1, parseInt(diaP));
+        dataLimiteDesconto.setHours(0,0,0,0);
+
+        const mensalidadeAtual = aluno.mensalidades?.find(m => !m.pago);
+        const mesExtenso = mensalidadeAtual ? nomesMesesLongos[mensalidadeAtual.mes] : "";
+
+        if (hoje > dataLimiteDesconto) {
+            return `Olá, ${aluno.nome}! 🎓\n\nPassando para lembrar que o prazo do desconto de pontualidade para a mensalidade de ${mesExtenso} já expirou, mas você ainda pode realizar o pagamento pelo valor original até o vencimento. \n\nNão deixe acumular! Qualquer dúvida, estamos aqui. 🚀`;
+        }
+
+        if (mensalidadeAtual && (mensalidadeAtual.mes === 1 || mensalidadeAtual.mes === 7)) {
+            return `Olá, ${aluno.nome}! 🌟\n\nNão esqueça: o pagamento do boleto de *${mesExtenso}* é fundamental para a sua renovação e continuidade dos estudos neste novo semestre!\n\n💰 *Benefício de Pontualidade:*\nPagando até o dia *${prazoConfigurado}*, você garante seus *9% de DESCONTO*. \n\nGaranta sua vaga e sua economia! 🎓🚀`;
+        } else {
+            return `Olá ${aluno.nome}, 🌟\n\nIdentificamos que você ainda não aproveitou o seu BENEFÍCIO de Pontualidade de ${mesExtenso}! \n\nEfetue o pagamento até o dia *${prazoConfigurado}* e garanta automaticamente *9% de DESCONTO* no valor da parcela. \n\nAproveite para economizar! 💰`;
+        }
     }
 
-    function gerarTextoDoc(aluno) {
+    window.gerarTextoDoc = function(aluno) {
         const u = (aluno.unidade || "").toUpperCase();
         let contato = "(81) 99988-9803";
         let link = "https://wa.me/5581999889803";
@@ -493,12 +523,7 @@
         const fCat = document.getElementById('filtroCategoria').value;
         const mesRef = parseInt(document.getElementById('mesRefDash').value);
         const hoje = new Date(); hoje.setHours(0,0,0,0);
-        
-        const lista = Object.values(window.alunos).filter(a => 
-            (fUniSelect.length === 0 || fUniSelect.includes(a.unidade)) && 
-            (!fCat || a.categoria === fCat)
-        );
-        
+        const lista = Object.values(window.alunos).filter(a => (fUniSelect.length === 0 || fUniSelect.includes(a.unidade)) && (!fCat || a.categoria === fCat));
         let stats = { pagNoMes: 0, emAtraso: 0, env: 0 };
         lista.forEach(a => {
             const s = a.controleEnvio || 'Pendente';
