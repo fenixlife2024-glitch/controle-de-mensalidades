@@ -2,51 +2,80 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Plataforma Integrada</title>
+  <title>Plataforma de Gestão</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-    body { display: flex; height: 100vh; background: #020617; overflow: hidden; }
-    .sidebar { width: 220px; background: #0f172a; color: white; display: flex; flex-direction: column; border-right: 1px solid rgba(255,255,255,0.1); }
-    .menu-btn { padding: 15px 20px; border: none; background: none; color: #94a3b8; text-align: left; cursor: pointer; width: 100%; display: flex; align-items: center; gap: 10px; font-size: 14px; }
-    .menu-btn:hover, .menu-btn.active { background: rgba(249, 115, 22, 0.1); color: #f97316; }
-    .content { flex: 1; background: white; }
+    body { display: flex; height: 100vh; background: #0f172a; overflow: hidden; }
+    
+    /* Sidebar */
+    .sidebar { width: 240px; background: #1e293b; color: white; display: flex; flex-direction: column; border-right: 1px solid rgba(255,255,255,0.1); }
+    .nav-header { padding: 20px; font-weight: bold; color: #f97316; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: center; }
+    
+    /* Botões Lateral */
+    .menu-item { padding: 15px 20px; border: none; background: none; color: #94a3b8; text-align: left; cursor: pointer; width: 100%; display: flex; align-items: center; gap: 12px; transition: 0.3s; }
+    .menu-item:hover { background: rgba(249, 115, 22, 0.1); color: white; }
+    .menu-item.active { background: rgba(249, 115, 22, 0.2); color: #f97316; border-left: 4px solid #f97316; }
+    
+    /* Área do Iframe */
+    .main-view { flex: 1; background: #f8fafc; position: relative; }
     iframe { width: 100%; height: 100%; border: none; display: none; }
-    .placeholder { height: 100%; display: flex; align-items: center; justify-content: center; color: #64748b; }
+    .welcome { height: 100%; display: flex; align-items: center; justify-content: center; color: #64748b; }
   </style>
 </head>
 <body>
-  <div class="sidebar">
-    <div style="padding:20px; font-weight:bold; color:#f97316;">SISTEMA</div>
-    
-    <button class="menu-btn" onclick="abrir('controle de cobrança.html', this)">💰 Cobrança</button>
-    <button class="menu-btn" onclick="abrir('teste.html.html', this)">📊 Financeiro</button>
-    <button class="menu-btn" onclick="abrir('gerador_relatorios.html', this)">📈 Relatórios</button>
-  </div>
 
-  <div class="content">
-    <iframe id="main-frame"></iframe>
-    <div id="msg" class="placeholder">Selecione um módulo</div>
-  </div>
+  <nav class="sidebar">
+    <div class="nav-header">PAINEL ADMINISTRATIVO</div>
+    
+    <button class="menu-item" onclick="navegar('controle de cobrança.html', this)">
+      <span>💰</span> Controle de Cobrança
+    </button>
+
+    <button class="menu-item" onclick="navegar('teste.html.html', this)">
+      <span>📊</span> Gestão Financeira
+    </button>
+
+    <button class="menu-item" onclick="navegar('gerador_relatorios.html', this)">
+      <span>📈</span> Gerador de Relatórios
+    </button>
+  </nav>
+
+  <main class="main-view">
+    <iframe id="content-frame"></iframe>
+    <div id="welcome-msg" class="welcome">
+      <h3>Selecione um módulo para visualizar os dados</h3>
+    </div>
+  </main>
 
   <script>
-    let dadosCache = null;
+    let dadosTemporarios = null;
 
-    function abrir(url, btn) {
-      const frame = document.getElementById("main-frame");
-      document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      document.getElementById("msg").style.display = "none";
+    function navegar(pagina, botao) {
+      const frame = document.getElementById("content-frame");
+      const msg = document.getElementById("welcome-msg");
+      
+      // Atualiza botões
+      document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active'));
+      botao.classList.add('active');
+      
+      // Carrega Página
+      msg.style.display = "none";
       frame.style.display = "block";
-      // O segredo do GitHub Pages: caminho relativo './'
-      frame.src = "./" + url;
+      
+      // O uso do './' garante que o GitHub procure na raiz da pasta
+      frame.src = "./" + pagina;
     }
 
-    window.addEventListener("message", (e) => {
-      if (e.data.type === "DATA_TRANSFER") dadosCache = e.data.payload;
-      if (e.data.type === "REQUEST_DATA" && dadosCache) {
-        document.getElementById("main-frame").contentWindow.postMessage({
+    // Gerenciador de comunicação (Ponte de Dados)
+    window.addEventListener("message", (event) => {
+      if (event.data.type === "DATA_TRANSFER") {
+        dadosTemporarios = event.data.payload;
+      }
+      if (event.data.type === "REQUEST_DATA" && dadosTemporarios) {
+        const frame = document.getElementById("content-frame");
+        frame.contentWindow.postMessage({
           type: "FILL_REPORT",
-          payload: dadosCache
+          payload: dadosTemporarios
         }, "*");
       }
     });
