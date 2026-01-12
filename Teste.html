@@ -10,22 +10,18 @@
         :root { --primary: #1e293b; --accent: #3b82f6; --success: #22c55e; --warning: #eab308; --danger: #ef4444; --bg: #f8fafc; --sidebar-w: 240px; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #334155; display: flex; height: 100vh; overflow: hidden; }
         
-        /* Sidebar com transição de recolhimento */
         .sidebar { 
             width: var(--sidebar-w); 
             background: var(--primary); 
             color: white; 
-            display: none; /* Ativado via JS no login */
+            display: none; 
             flex-direction: column; 
             z-index: 1001; 
             transition: all 0.3s ease;
             overflow: hidden;
             white-space: nowrap;
         }
-        .sidebar.collapsed {
-            width: 0;
-            min-width: 0;
-        }
+        .sidebar.collapsed { width: 0; min-width: 0; }
 
         .sidebar-header { padding: 20px; font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 14px; text-transform: uppercase; }
         .sidebar-menu { flex-grow: 1; padding: 10px 0; }
@@ -35,11 +31,15 @@
         .view-container { flex-grow: 1; display: none; flex-direction: column; padding: 25px; overflow-y: auto; height: 100vh; box-sizing: border-box; transition: padding 0.3s ease; }
         .view-active { display: flex; }
         
-        .config-bar { background: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #e2e8f0; display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 12px; align-items: flex-end; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        /* Ajuste na barra de configuração para acomodar filtros múltiplos */
+        .config-bar { background: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #e2e8f0; display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; align-items: flex-end; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         .input-group { display: flex; flex-direction: column; gap: 5px; }
         label { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #64748b; }
         .form-control { padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; outline: none; width: 100%; box-sizing: border-box; }
         
+        /* Estilo para selects múltiplos */
+        select[multiple].form-control { height: 60px; padding: 4px; }
+
         .dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
         .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 5px solid var(--accent); }
         .card h4 { margin: 0 0 10px 0; font-size: 12px; color: #64748b; text-transform: uppercase; }
@@ -64,7 +64,6 @@
         .btn-danger { background: var(--danger); color: white; }
         .btn-warning { background: var(--warning); color: white; }
         
-        /* Botão de Toggle Lateral */
         .btn-toggle { background: none; border: none; cursor: pointer; font-size: 20px; color: var(--primary); padding: 5px; margin-right: 15px; display: flex; align-items: center; }
 
         .modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
@@ -103,7 +102,8 @@
         </div>
         <div style="display:flex; gap:8px; align-items:center;">
             <button onclick="abrirModalCadastro()" class="btn btn-primary">➕ Novo Aluno</button>
-            <button onclick="editarSelecionado()" class="btn btn-warning" style="background:#6366f1">✏️ Editar Seleção</button>
+            <button onclick="editarSelecionado()" class="btn btn-warning" style="background:#6366f1">✏️ Editar 1</button>
+            <button onclick="abrirModalLote()" class="btn btn-warning" style="background:#f59e0b">📅 Venc. Lote</button>
             <button onclick="resetarStatusEnvio()" class="btn btn-warning">🔄 Resetar Status</button>
             <button onclick="excluirSelecionados()" class="btn btn-danger">🗑️ Deletar</button>
             <span id="contador" style="font-weight:700; color:var(--accent); font-size:11px; background:#e0f2fe; padding:5px 10px; border-radius:20px;">Sincronizando...</span>
@@ -120,12 +120,15 @@
             </select>
         </div>
         <div class="input-group"><label>Ano</label><input type="number" id="anoRef" class="form-control" value="2026"></div>
-        <div class="input-group"><label>Unidade</label><select id="filtroUnidade" class="form-control" onchange="renderizar(); renderizarPainel();"><option value="">Todas</option></select></div>
         
         <div class="input-group">
-            <label>Status</label>
-            <select id="filtroStatusEnvio" class="form-control" onchange="renderizar()">
-                <option value="todos">Todos</option>
+            <label>Unidades (Ctrl + Clique)</label>
+            <select id="filtroUnidade" class="form-control" multiple onchange="renderizar(); renderizarPainel();"></select>
+        </div>
+        
+        <div class="input-group">
+            <label>Status (Ctrl + Clique)</label>
+            <select id="filtroStatusEnvio" class="form-control" multiple onchange="renderizar()">
                 <option value="Pendente">⏳ Pendentes</option>
                 <option value="Enviado">📤 Enviados</option>
                 <option value="Pago">✅ Pagos</option>
@@ -161,7 +164,6 @@
             <h3 id="modalTitle" style="margin:0; font-size:18px;">Dados do Aluno</h3>
             <button onclick="fecharModal()" style="border:none; background:none; cursor:pointer; font-size:28px; color:#94a3b8;">&times;</button>
         </div>
-        
         <div class="grid-form">
             <div class="input-group"><label>RA (Único)</label><input type="text" id="mRA" class="form-control"></div>
             <div class="input-group"><label>Nome Completo</label><input type="text" id="mNome" class="form-control"></div>
@@ -170,12 +172,33 @@
             <div class="input-group"><label>Categoria</label><select id="mCategoria" class="form-control"><option value="Extranet">Extranet</option><option value="PTC">PTC</option></select></div>
             <div class="input-group"><label>Status de Envio</label><select id="mStatusEnvio" class="form-control"><option value="Pendente">Pendente</option><option value="Enviado">Enviado</option><option value="Pago">Pago</option><option value="Número Inválido">Inválido</option></select></div>
         </div>
-
         <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
         <label style="margin-bottom:10px; display:block; font-weight:bold;">Vencimentos das Mensalidades:</label>
         <div id="listaMensalidades" style="display:flex; flex-direction:column; gap:8px; margin-bottom:20px;"></div>
-
         <button onclick="salvarAluno()" class="btn btn-primary" style="width:100%; padding:12px; justify-content:center; font-size:14px;">💾 Salvar Informações</button>
+    </div>
+</div>
+
+<div id="modalLote" class="modal">
+    <div class="modal-content" style="max-width: 400px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3 style="margin:0; font-size:18px;">Vencimento em Lote</h3>
+            <button onclick="fecharModalLote()" style="border:none; background:none; cursor:pointer; font-size:28px; color:#94a3b8;">&times;</button>
+        </div>
+        <div class="input-group" style="margin-bottom:15px;">
+            <label>Mês para Atualizar</label>
+            <select id="loteMes" class="form-control">
+                <option value="1">Janeiro</option><option value="2">Fevereiro</option><option value="3">Março</option>
+                <option value="4">Abril</option><option value="5">Maio</option><option value="6">Junho</option>
+                <option value="7">Julho</option><option value="8">Agosto</option><option value="9">Setembro</option>
+                <option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
+            </select>
+        </div>
+        <div class="input-group" style="margin-bottom:20px;">
+            <label>Nova Data de Vencimento</label>
+            <input type="date" id="loteData" class="form-control">
+        </div>
+        <button onclick="salvarLoteVencimento()" class="btn btn-primary" style="width:100%; padding:12px; justify-content:center;">💾 Aplicar aos Selecionados</button>
     </div>
 </div>
 
@@ -215,7 +238,6 @@
     onAuthStateChanged(auth, user => { if (user) { document.getElementById('login-screen').style.display='none'; document.getElementById('mainSidebar').style.display='flex'; document.getElementById('mainContainer').style.display='flex'; carregarDados(); } });
     document.getElementById('btnLogin').addEventListener('click', async () => { try { await signInWithEmailAndPassword(auth, document.getElementById('loginEmail').value, document.getElementById('loginPass').value); } catch(e) { alert("Acesso Negado"); } });
 
-    // FUNÇÃO DE TOGGLE DA BARRA LATERAL
     window.toggleSidebar = function() {
         document.getElementById('mainSidebar').classList.toggle('collapsed');
     };
@@ -342,21 +364,30 @@
         } catch (e) { alert("Erro ao salvar: " + e.message); }
     }
 
+    // UPGRADE: Renderização com suporte a multi-filtros
     window.renderizar = function() {
         const t = document.getElementById('corpoTabela');
         const b = document.getElementById('busca').value.toLowerCase();
-        const fUni = document.getElementById('filtroUnidade').value;
+        
+        // Coletar múltiplos valores dos selects
+        const fUni = Array.from(document.getElementById('filtroUnidade').selectedOptions).map(opt => opt.value);
+        const fStatus = Array.from(document.getElementById('filtroStatusEnvio').selectedOptions).map(opt => opt.value);
+        
         const fCat = document.getElementById('filtroCategoria').value;
         const fMarcado = document.getElementById('filtroMarcado').value;
-        const fStatus = document.getElementById('filtroStatusEnvio').value;
         
         const lista = Object.values(window.alunos).filter(a => {
             const status = a.controleEnvio || 'Pendente';
-            const matchFiltros = (!fUni || a.unidade === fUni) && (!fCat || a.categoria === fCat);
+            
+            // Lógica de Multi-seleção: Se nada estiver selecionado ou 'Todas', ignorar filtro
+            const matchUni = fUni.length === 0 || fUni.includes(a.unidade);
+            const matchStatusEnvio = fStatus.length === 0 || fStatus.includes(status);
+            
+            const matchCat = (!fCat || a.categoria === fCat);
             const matchBusca = (a.nome?.toLowerCase().includes(b) || a.ra.includes(b));
             const matchMarcado = (fMarcado === 'todos' || (fMarcado === 'marcados' && a.marcado));
-            const matchStatusEnvio = (fStatus === 'todos' || status === fStatus);
-            return matchFiltros && matchBusca && matchMarcado && matchStatusEnvio;
+            
+            return matchUni && matchStatusEnvio && matchCat && matchBusca && matchMarcado;
         }).sort((x,y) => x.nome.localeCompare(y.nome));
 
         t.innerHTML = '';
@@ -389,6 +420,40 @@
         document.getElementById('contador').innerText = `${lista.length} Clientes`;
     }
 
+    // UPGRADE: Novas funções para suporte a lote
+    window.abrirModalLote = function() {
+        const selecionados = document.querySelectorAll('.chk-aluno:checked');
+        if(selecionados.length === 0) return alert("Selecione os alunos na tabela primeiro.");
+        document.getElementById('modalLote').style.display = 'flex';
+    }
+
+    window.fecharModalLote = () => document.getElementById('modalLote').style.display = 'none';
+
+    window.salvarLoteVencimento = async function() {
+        const mesAlvo = parseInt(document.getElementById('loteMes').value);
+        const novaData = document.getElementById('loteData').value;
+        const selecionados = document.querySelectorAll('.chk-aluno:checked');
+        
+        if(!novaData) return alert("Escolha uma data válida.");
+        if(!confirm(`Deseja alterar o vencimento do mês ${mesAlvo} para ${novaData} em ${selecionados.length} alunos?`)) return;
+
+        const batch = writeBatch(db);
+        selecionados.forEach(chk => {
+            const ra = chk.getAttribute('data-ra');
+            const aluno = window.alunos[ra];
+            const mIndex = aluno.mensalidades.findIndex(m => m.mes === mesAlvo);
+            if(mIndex !== -1) {
+                aluno.mensalidades[mIndex].vencimento = novaData;
+                batch.update(doc(db, "alunos", ra), { mensalidades: aluno.mensalidades });
+            }
+        });
+
+        await batch.commit();
+        alert("Vencimentos atualizados!");
+        fecharModalLote();
+        renderizar();
+    }
+
     function gerarTextoZap(aluno) {
         const hoje = new Date(); hoje.setHours(0,0,0,0);
         const mensalidade = aluno.mensalidades?.find(m => !m.pago);
@@ -396,7 +461,6 @@
         const dataVenc = new Date(mensalidade.vencimento + 'T00:00:00');
         const mesExtenso = nomesMesesLongos[mensalidade.mes];
         const anoRef = document.getElementById('anoRef').value;
-
         const termo = (aluno.controleEnvio === 'Enviado') ? 'ainda está' : 'já está';
 
         if (hoje > dataVenc) {
@@ -425,11 +489,16 @@
     }
 
     window.renderizarPainel = function() {
-        const fUni = document.getElementById('filtroUnidade').value;
+        const fUniSelect = Array.from(document.getElementById('filtroUnidade').selectedOptions).map(opt => opt.value);
         const fCat = document.getElementById('filtroCategoria').value;
         const mesRef = parseInt(document.getElementById('mesRefDash').value);
         const hoje = new Date(); hoje.setHours(0,0,0,0);
-        const lista = Object.values(window.alunos).filter(a => (!fUni || a.unidade === fUni) && (!fCat || a.categoria === fCat));
+        
+        const lista = Object.values(window.alunos).filter(a => 
+            (fUniSelect.length === 0 || fUniSelect.includes(a.unidade)) && 
+            (!fCat || a.categoria === fCat)
+        );
+        
         let stats = { pagNoMes: 0, emAtraso: 0, env: 0 };
         lista.forEach(a => {
             const s = a.controleEnvio || 'Pendente';
@@ -530,9 +599,10 @@
 
     window.fecharModal = () => document.getElementById('modal').style.display = 'none';
     window.toggleTodos = (el) => document.querySelectorAll('.chk-aluno').forEach(chk => chk.checked = el.checked);
+    
     function atualizarOpcoesFiltros() { 
         const u = [...new Set(Object.values(window.alunos).map(a => a.unidade))].sort(); 
-        document.getElementById('filtroUnidade').innerHTML = '<option value="">Todas</option>' + u.map(x => `<option value="${x}">${x}</option>`).join(''); 
+        document.getElementById('filtroUnidade').innerHTML = u.map(x => `<option value="${x}">${x}</option>`).join(''); 
     }
 </script>
 </body>
