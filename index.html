@@ -22,7 +22,7 @@
   <div class="sidebar" id="sidebar">
     <div class="top" onclick="toggleSidebar()"><span>☰</span></div>
     
-    <button class="menu-btn" onclick="abrirSistema('controle de cobrança.html', this)">
+    <button class="menu-btn" onclick="abrirSistema('controle_de_cobranca.html', this)">
       <span>💰</span><span class="text">Sistema de Cobrança</span>
     </button>
 
@@ -30,7 +30,7 @@
       <span>📊</span><span class="text">Gestão Financeira</span>
     </button>
 
-    <button class="menu-btn" onclick="abrirSistema('gerador de relatórios.html', this)">
+    <button class="menu-btn" onclick="abrirSistema('gerador_de_relatorios.html', this)">
       <span>📈</span><span class="text">Gerador de Relatórios</span>
     </button>
   </div>
@@ -55,19 +55,15 @@
 
     function toggleSidebar() { document.getElementById("sidebar").classList.toggle("collapsed"); }
 
-    // Ponte de comunicação entre os Iframes
     window.addEventListener("message", (event) => {
       if (event.data.type === "DATA_TRANSFER") {
         dadosCobrancaGlobal = event.data.payload;
       }
       if (event.data.type === "REQUEST_DATA" && dadosCobrancaGlobal) {
-        const frame = document.getElementById("frame");
-        if(frame.contentWindow) {
-          frame.contentWindow.postMessage({
-            type: "FILL_REPORT",
-            payload: dadosCobrancaGlobal
-          }, "*");
-        }
+        document.getElementById("frame").contentWindow.postMessage({
+          type: "FILL_REPORT",
+          payload: dadosCobrancaGlobal
+        }, "*");
       }
     });
   </script>
