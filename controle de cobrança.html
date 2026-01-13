@@ -16,7 +16,6 @@
         .row-vencido { background-color: rgba(239, 68, 68, 0.1); border-left: 4px solid #ef4444; }
         .row-alerta { background-color: rgba(234, 179, 8, 0.1); border-left: 4px solid #eab308; }
         
-        /* Estilos da Sidebar Retrátil */
         #sidebar { transition: all 0.3s ease; width: 260px; min-width: 260px; }
         #sidebar.collapsed { width: 80px; min-width: 80px; }
         #sidebar.collapsed .sidebar-text { display: none; }
@@ -38,7 +37,6 @@
     </div>
 
     <div id="app-content" class="flex min-h-screen" style="display:none;">
-        
         <aside id="sidebar" class="bg-dark-blue p-4 border-r border-gray-700 flex flex-col text-sm font-bold relative">
             <div class="flex items-center justify-between mb-10 px-2">
                 <div class="sidebar-logo text-orange italic text-xl uppercase tracking-tighter">
@@ -51,18 +49,12 @@
             
             <nav class="space-y-4">
                 <button onclick="renderizarTabela()" class="w-full flex items-center p-3 rounded bg-orange text-white">
-                    <i class="fas fa-home w-6"></i> 
-                    <span class="sidebar-text">Dashboard</span>
+                    <i class="fas fa-home w-6"></i> <span class="sidebar-text">Dashboard</span>
                 </button>
                 <button onclick="openModal('modalAluno')" class="w-full flex items-center p-3 rounded hover:bg-slate-700 transition">
-                    <i class="fas fa-plus w-6"></i> 
-                    <span class="sidebar-text">Novo Aluno</span>
+                    <i class="fas fa-plus w-6"></i> <span class="sidebar-text">Novo Aluno</span>
                 </button>
             </nav>
-
-            <div class="mt-auto p-2 sidebar-text text-[10px] text-gray-500 uppercase font-black text-center border-t border-gray-800 pt-4">
-                v2.1 Financeiro
-            </div>
         </aside>
 
         <main class="flex-1 p-8 overflow-hidden flex flex-col">
@@ -248,8 +240,7 @@
         }
 
         window.toggleSidebar = () => {
-            const sb = document.getElementById('sidebar');
-            sb.classList.toggle('collapsed');
+            document.getElementById('sidebar').classList.toggle('collapsed');
         };
 
         window.renderizarTabela = () => {
@@ -365,12 +356,15 @@
             const a = window.db_local.find(al => al.id === id);
             if (!a.fin) return alert("Configure o acordo primeiro!");
             const prox = (a.parcelaAtual || 0) + 1;
+            
             if (confirm(`Avançar para parcela ${prox}?`)) {
                 const parts = a.fin.venc.split('/');
                 const d = new Date(parts[2], parts[1] - 1, parts[0]);
                 d.setMonth(d.getMonth() + 1);
                 const novaData = d.toLocaleDateString('pt-BR');
+                
                 await updateDoc(doc(db, "negociacoes", a.id), { parcelaAtual: prox, "fin.venc": novaData });
+
                 const msg = `Olá, *${a.nome}*! 👋\n\nSegue o boleto referente à parcela *${prox}/${a.fin.totalParcelas}* (*${a.unidade}*).\n\n💰 *Valor:* ${prox === 1 ? a.fin.valorEntrada : a.fin.valorParcela}\n📅 *Vencimento:* ${a.fin.venc}\n\nVocê pode acompanhar seu financeiro e baixar os boletos atualizados diretamente no nosso portal:\n🌐 https://www.vaiqta.com.br/\n\nO boleto também segue em anexo abaixo. Qualquer dúvida, estamos à disposição!`;
                 window.open(`https://api.whatsapp.com/send?phone=55${a.tel.replace(/\D/g,'')}&text=${encodeURIComponent(msg)}`);
             }
