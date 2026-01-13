@@ -3,75 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Cobrança Pro - Marketing & CRM</title>
+    <title>Sistema de Cobrança Pro - Oficial 2026</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background-color: #0f172a; color: #f8fafc; }
+        body { background-color: #0f172a; color: #f8fafc; overflow-x: hidden; }
         .bg-dark-blue { background-color: #1e293b; }
         .text-orange { color: #f97316; }
         .bg-orange { background-color: #f97316; }
+        input, select, textarea { background-color: #0f172a !important; color: white !important; border: 1px solid #334155 !important; }
         #login-screen { position: fixed; inset: 0; background: #0f172a; display: flex; justify-content: center; align-items: center; z-index: 2000; }
+        .row-vencido { background-color: rgba(239, 68, 68, 0.1); border-left: 4px solid #ef4444; }
+        .row-alerta { background-color: rgba(234, 179, 8, 0.1); border-left: 4px solid #eab308; }
+        
+        /* Estilos da Sidebar Retrátil */
+        #sidebar { transition: all 0.3s ease; width: 260px; min-width: 260px; }
+        #sidebar.collapsed { width: 80px; min-width: 80px; }
+        #sidebar.collapsed .sidebar-text { display: none; }
+        #sidebar.collapsed .sidebar-logo { font-size: 0; }
+        #sidebar.collapsed .sidebar-logo span { font-size: 1.2rem; }
+        #sidebar.collapsed nav button { justify-content: center; padding: 12px 0; }
+        #sidebar.collapsed nav button i { margin-right: 0; font-size: 1.2rem; }
     </style>
 </head>
 <body class="font-sans">
 
     <div id="login-screen">
         <div class="bg-white p-8 rounded-xl w-80 text-slate-900 shadow-2xl text-center">
-            <h2 class="font-bold text-xl mb-4 text-orange italic">SISTEMA COBRANÇA</h2>
-            <input type="email" id="loginEmail" placeholder="E-mail" class="w-full p-2 border rounded mb-3 outline-none focus:border-orange">
-            <input type="password" id="loginPass" placeholder="Senha" class="w-full p-2 border rounded mb-4 outline-none focus:border-orange">
-            <button id="btnLogin" class="w-full bg-orange text-white font-bold py-2 rounded uppercase italic">Acessar</button>
+            <h2 class="font-bold text-xl mb-4 text-orange italic uppercase">Painel de Cobrança</h2>
+            <input type="email" id="loginEmail" placeholder="E-mail" class="w-full p-2 border rounded mb-3 outline-none">
+            <input type="password" id="loginPass" placeholder="Senha" class="w-full p-2 border rounded mb-4 outline-none">
+            <button id="btnLogin" class="w-full bg-orange text-white font-bold py-2 rounded uppercase italic">Entrar</button>
         </div>
     </div>
 
     <div id="app-content" class="flex min-h-screen" style="display:none;">
-        <aside class="w-64 bg-dark-blue p-6 border-r border-gray-700 hidden md:block">
-            <h1 class="text-2xl font-bold text-orange mb-8 text-center italic">SISTEMA <span class="text-white">COBRANÇA</span></h1>
+        
+        <aside id="sidebar" class="bg-dark-blue p-4 border-r border-gray-700 flex flex-col text-sm font-bold relative">
+            <div class="flex items-center justify-between mb-10 px-2">
+                <div class="sidebar-logo text-orange italic text-xl uppercase tracking-tighter">
+                    Sistema <span class="text-white">C</span><span class="text-white sidebar-text">obrança</span>
+                </div>
+                <button onclick="toggleSidebar()" class="text-gray-400 hover:text-orange transition">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+            </div>
+            
             <nav class="space-y-4">
-                <button onclick="renderizarTabela()" class="w-full text-left p-3 rounded bg-orange text-white font-bold shadow-lg shadow-orange/20"><i class="fas fa-home mr-2"></i> Dashboard</button>
-                <button onclick="openModal('modalAluno')" class="w-full text-left p-3 rounded hover:bg-slate-700 transition text-sm font-bold"><i class="fas fa-plus mr-2"></i> Novo Aluno</button>
+                <button onclick="renderizarTabela()" class="w-full flex items-center p-3 rounded bg-orange text-white">
+                    <i class="fas fa-home w-6"></i> 
+                    <span class="sidebar-text">Dashboard</span>
+                </button>
+                <button onclick="openModal('modalAluno')" class="w-full flex items-center p-3 rounded hover:bg-slate-700 transition">
+                    <i class="fas fa-plus w-6"></i> 
+                    <span class="sidebar-text">Novo Aluno</span>
+                </button>
             </nav>
-            <div class="mt-10">
-                <label class="text-xs uppercase text-gray-500 font-black">Filtrar Unidade</label>
-                <select id="filtroUnidade" onchange="renderizarTabela()" class="w-full mt-2 bg-slate-800 border border-gray-600 p-2 rounded text-sm outline-none">
-                    <option value="Todas">Todas as Unidades</option>
+
+            <div class="mt-auto p-2 sidebar-text text-[10px] text-gray-500 uppercase font-black text-center border-t border-gray-800 pt-4">
+                v2.1 Financeiro
+            </div>
+        </aside>
+
+        <main class="flex-1 p-8 overflow-hidden flex flex-col">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 text-center">
+                <div class="bg-dark-blue p-4 rounded-lg border-b-4 border-orange"><p class="text-gray-400 text-[10px] uppercase font-bold">Total</p><h3 id="cardTotal" class="text-2xl font-black text-orange">0</h3></div>
+                <div class="bg-dark-blue p-4 rounded-lg border-b-4 border-red-600"><p class="text-gray-400 text-[10px] uppercase font-bold">🔴 Vencidos</p><h3 id="cardVencidos" class="text-2xl font-black text-red-500">0</h3></div>
+                <div class="bg-dark-blue p-4 rounded-lg border-b-4 border-yellow-500"><p class="text-gray-400 text-[10px] uppercase font-bold">🟡 Alerta</p><h3 id="cardAlerta" class="text-2xl font-black text-yellow-400">0</h3></div>
+                <div class="bg-dark-blue p-4 rounded-lg border-b-4 border-green-500"><p class="text-gray-400 text-[10px] uppercase font-bold">🟢 Em Dia</p><h3 id="cardEmDia" class="text-2xl font-black text-green-500">0</h3></div>
+            </div>
+
+            <div class="bg-slate-800/50 p-4 rounded-t-lg border border-gray-700 grid grid-cols-1 md:grid-cols-4 gap-4">
+                <input type="text" id="buscaGeral" onkeyup="renderizarTabela()" placeholder="Buscar Nome ou CPF..." class="p-2 rounded text-sm outline-none">
+                <select id="filtroUnidade" onchange="renderizarTabela()" class="p-2 rounded text-sm outline-none">
+                    <option value="Todas">Todas Unidades</option>
                     <option value="Recife">Recife</option><option value="Carpina">Carpina</option>
                     <option value="Gravatá">Gravatá</option><option value="Bezerros">Bezerros</option>
                     <option value="Amaraji">Amaraji</option>
                 </select>
-            </div>
-        </aside>
-
-        <main class="flex-1 p-8">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                <div class="bg-dark-blue p-5 rounded-lg border-b-4 border-orange text-center">
-                    <p class="text-gray-400 text-xs uppercase font-bold">Acordos Ativos</p>
-                    <h3 id="cardFechados" class="text-3xl font-black text-orange">0</h3>
-                </div>
-                <div class="bg-dark-blue p-5 rounded-lg border-b-4 border-blue-500 text-center">
-                    <p class="text-gray-400 text-xs uppercase font-bold">Aguardando Resposta</p>
-                    <h3 id="cardEnviados" class="text-3xl font-black text-blue-400">0</h3>
-                </div>
+                <select id="filtroTipo" onchange="renderizarTabela()" class="p-2 rounded text-sm outline-none">
+                    <option value="Todos">Todos (PTC/EXT)</option>
+                    <option value="PTC">PTC</option><option value="Extranet">Extranet</option>
+                </select>
+                <select id="filtroStatusFin" onchange="renderizarTabela()" class="p-2 rounded text-sm outline-none">
+                    <option value="Todos">Todas Situações</option>
+                    <option value="Vencido">🔴 Vencidos</option><option value="Alerta">🟡 Alerta</option><option value="EmDia">🟢 Em Dia</option>
+                </select>
             </div>
 
-            <div class="bg-dark-blue rounded shadow-2xl overflow-hidden border border-gray-800">
-                <div class="p-4 border-b border-gray-700 flex justify-between items-center bg-slate-800/30">
-                    <h2 class="font-bold text-lg">Painel de Negociações</h2>
-                    <input type="text" id="buscaGeral" onkeyup="renderizarTabela()" placeholder="Buscar por CPF..." class="bg-slate-900 border border-gray-700 p-2 rounded text-sm w-72 outline-none focus:border-orange">
-                </div>
+            <div class="bg-dark-blue border-x border-b border-gray-700 rounded-b-lg overflow-auto">
                 <table class="w-full text-left">
-                    <thead class="bg-slate-800 text-xs uppercase text-gray-400 font-black">
+                    <thead class="bg-slate-800 text-[10px] uppercase text-gray-400 font-black">
                         <tr>
-                            <th class="p-4 w-10">#</th>
-                            <th class="p-4">Aluno / CPF</th>
-                            <th class="p-4">Unidade</th>
-                            <th class="p-4">Status / Parcelas</th>
+                            <th class="p-4">Aluno / Detalhes</th>
+                            <th class="p-4">Parcelas</th>
                             <th class="p-4">Vencimento</th>
                             <th class="p-4 text-center">Ações</th>
                         </tr>
                     </thead>
-                    <tbody id="listaAlunos" class="divide-y divide-gray-800"></tbody>
+                    <tbody id="listaAlunos" class="divide-y divide-gray-800 text-sm"></tbody>
                 </table>
             </div>
         </main>
@@ -79,54 +109,102 @@
 
     <div id="modalAluno" class="fixed inset-0 bg-black/80 hidden flex items-center justify-center p-4 z-50">
         <div class="bg-dark-blue w-full max-w-md p-6 rounded-lg border border-gray-700 shadow-2xl">
-            <h2 class="text-xl font-bold text-orange mb-4 italic">Cadastrar Aluno</h2>
-            <form id="formAluno" class="space-y-4">
-                <input type="text" id="nome" placeholder="Nome Completo" required class="w-full bg-slate-900 border border-gray-700 p-2 rounded mt-1 uppercase outline-none focus:border-orange">
+            <h2 class="text-xl font-bold text-orange mb-4 italic uppercase">Cadastrar Aluno</h2>
+            <div class="space-y-4">
+                <input type="text" id="novoNome" placeholder="Nome Completo" class="w-full p-2 rounded uppercase font-bold outline-none">
+                <input type="text" id="novoCpf" placeholder="CPF" oninput="maskCPF(this)" maxlength="14" class="w-full p-2 rounded outline-none">
+                <input type="text" id="novoTel" placeholder="WhatsApp" oninput="maskTel(this)" maxlength="15" class="w-full p-2 rounded outline-none">
                 <div class="grid grid-cols-2 gap-4">
-                    <input type="text" id="cpf" placeholder="CPF" oninput="maskCPF(this)" maxlength="14" required class="w-full bg-slate-900 border border-gray-700 p-2 rounded outline-none">
-                    <input type="text" id="tel" placeholder="WhatsApp" oninput="maskTel(this)" maxlength="15" required class="w-full bg-slate-900 border border-gray-700 p-2 rounded outline-none">
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <select id="unidade" class="w-full bg-slate-900 border border-gray-700 p-2 rounded outline-none">
+                    <select id="novoUnidade" class="p-2 rounded outline-none">
                         <option value="Recife">Recife</option><option value="Carpina">Carpina</option>
                         <option value="Gravatá">Gravatá</option><option value="Bezerros">Bezerros</option>
                         <option value="Amaraji">Amaraji</option>
                     </select>
-                    <select id="tipo" class="w-full bg-slate-900 border border-gray-700 p-2 rounded outline-none">
-                        <option value="Extranet">Extranet</option><option value="PTC">PTC</option>
+                    <select id="novoTipo" class="p-2 rounded outline-none">
+                        <option value="PTC">PTC</option><option value="Extranet">Extranet</option>
                     </select>
                 </div>
-                <div class="flex justify-end gap-3 pt-4 border-t border-gray-800">
-                    <button type="button" onclick="closeModal('modalAluno')" class="text-gray-400 font-bold">Cancelar</button>
-                    <button type="submit" class="bg-orange px-6 py-2 rounded font-black text-white uppercase text-sm">Salvar Aluno</button>
+                <div class="flex justify-end gap-3 pt-4">
+                    <button onclick="closeModal('modalAluno')" class="text-gray-400 font-bold">Cancelar</button>
+                    <button onclick="salvarNovoAluno()" class="bg-orange px-6 py-2 rounded font-black text-white uppercase text-sm">Salvar Aluno</button>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 
     <div id="modalAcordo" class="fixed inset-0 bg-black/80 hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-dark-blue w-full max-w-md p-6 rounded-lg border-2 border-orange shadow-2xl">
-            <h2 class="text-xl font-bold text-orange mb-1 italic">Proposta Comercial</h2>
-            <p id="nomeAlunoAcordo" class="text-xs text-gray-400 mb-6 font-bold uppercase"></p>
-            <div class="space-y-4">
-                <input type="text" id="valorAVista" onkeyup="maskDinheiro(this)" placeholder="Valor no Cartão R$ 0,00" class="w-full bg-slate-900 border border-gray-700 p-2 rounded text-orange font-bold outline-none">
-                <input type="text" id="valorAcordo" onkeyup="maskDinheiro(this)" placeholder="Valor Total Boleto R$ 0,00" class="w-full bg-slate-900 border border-gray-700 p-2 rounded font-bold outline-none">
-                <div class="grid grid-cols-3 gap-2">
-                    <input type="text" id="entrada" onkeyup="maskDinheiro(this)" placeholder="Entrada" class="w-full bg-slate-900 border border-gray-700 p-2 rounded outline-none">
-                    <input type="number" id="numParcelas" value="1" class="w-full bg-slate-900 border border-gray-700 p-2 rounded outline-none">
-                    <input type="text" id="vlrParcelaManual" onkeyup="maskDinheiro(this)" placeholder="Vlr Parcela" class="w-full bg-slate-900 border border-gray-700 p-2 rounded outline-none text-orange font-bold">
+        <div class="bg-dark-blue w-full max-w-4xl p-8 rounded-lg border-2 border-orange shadow-2xl">
+            <h2 class="text-2xl font-black text-orange mb-1 italic uppercase">Configurar Acordo & Proposta</h2>
+            <p id="nomeAlunoAcordo" class="text-sm text-gray-400 mb-8 uppercase font-bold"></p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <div class="space-y-5">
+                    <div>
+                        <label class="text-[10px] text-gray-400 font-black uppercase mb-1 block">Descrição da Cobrança</label>
+                        <textarea id="descricaoDebito" placeholder="Ex: Mensalidades atrasadas + Rematrícula" class="w-full p-3 rounded text-sm outline-none h-20"></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-[10px] text-gray-400 font-black uppercase mb-1 block">Valor Total Bruto</label>
+                            <input type="text" id="valorTotalBruto" onkeyup="maskDinheiro(this)" placeholder="R$ 0,00" class="w-full p-3 rounded text-sm outline-none">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-green-400 font-black uppercase mb-1 block">Valor PIX (À Vista)</label>
+                            <input type="text" id="valorAVista" onkeyup="maskDinheiro(this)" placeholder="R$ 0,00" class="w-full p-3 rounded text-sm text-green-400 font-bold outline-none">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-[10px] text-gray-400 font-black uppercase mb-1 block">Entrada (Boleto)</label>
+                            <input type="text" id="entrada" onkeyup="maskDinheiro(this)" placeholder="R$ 0,00" class="w-full p-3 rounded text-sm outline-none">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-gray-400 font-black uppercase mb-1 block">Valor Parcela</label>
+                            <input type="text" id="vlrParcelaManual" onkeyup="maskDinheiro(this)" placeholder="R$ 0,00" class="w-full p-3 rounded text-sm outline-none">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-[10px] text-gray-400 font-black uppercase mb-1 block">Total de Parcelas</label>
+                            <input type="number" id="numParcelas" class="w-full p-3 rounded text-sm outline-none">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-gray-400 font-black uppercase mb-1 block">Parcelas Já Pagas</label>
+                            <input type="number" id="parcelaAtualManual" class="w-full p-3 rounded text-sm border-orange/40 outline-none">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="text-[10px] text-orange font-black uppercase mb-1 block">Vencimento da 1ª Parcela (ou Entrada)</label>
+                        <input type="date" id="dataVencimentoManual" class="w-full p-3 rounded text-sm outline-none">
+                    </div>
                 </div>
-                <div class="flex items-center gap-2 bg-slate-800 p-3 rounded border border-gray-700">
-                    <input type="checkbox" id="checkRematricula" class="w-5 h-5 accent-orange cursor-pointer">
-                    <label for="checkRematricula" class="text-sm font-bold cursor-pointer">Incluir Rematrícula (Emocional)</label>
+
+                <div class="flex flex-col justify-between">
+                    <div class="bg-slate-900/50 p-6 rounded-xl border border-gray-700 h-full">
+                        <div class="mb-6">
+                            <label class="text-[10px] text-orange font-black uppercase block mb-3">Tom da Mensagem</label>
+                            <select id="tomMensagem" class="w-full p-3 rounded text-sm outline-none">
+                                <option value="motivado">✨ Motivacional (Sonho/Rematrícula)</option>
+                                <option value="padrao" selected>📄 Padrão Persuasivo (Profissional)</option>
+                            </select>
+                        </div>
+                        <div class="space-y-4">
+                            <p class="text-orange font-bold text-sm uppercase">Dica de Atualização:</p>
+                            <p class="text-xs text-gray-400 leading-relaxed">Se o aluno pagou 7 de 9, coloque "7" em Pagas. O sistema moverá o vencimento para a parcela 8 automaticamente.</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="space-y-1">
-                    <label class="text-[10px] text-gray-400 font-bold uppercase">Vencimento da Entrada (Opcional)</label>
-                    <input type="date" id="dataVencimentoManual" class="w-full bg-slate-900 border border-gray-700 p-2 rounded outline-none text-white focus:border-orange">
-                </div>
-                <div class="flex justify-between gap-3 pt-4">
-                    <button type="button" onclick="closeModal('modalAcordo')" class="text-gray-400 font-bold">Cancelar</button>
-                    <button onclick="gerarEnviar()" class="bg-orange px-8 py-3 rounded font-black text-white uppercase text-xs shadow-lg">Enviar Proposta</button>
+            </div>
+
+            <div class="flex justify-between items-center mt-10">
+                <button onclick="closeModal('modalAcordo')" class="text-gray-400 font-bold hover:text-white transition">Cancelar</button>
+                <div class="flex gap-4">
+                    <button onclick="salvarAcordo(false)" class="bg-slate-700 px-8 py-3 rounded font-black text-white uppercase text-xs">Apenas Salvar</button>
+                    <button onclick="salvarAcordo(true)" class="bg-orange px-10 py-3 rounded font-black text-white uppercase text-xs shadow-lg">Salvar e Enviar Proposta</button>
                 </div>
             </div>
         </div>
@@ -152,7 +230,7 @@
         const colRef = collection(db, "negociacoes");
 
         window.db_local = [];
-        window.idxAtivo = null;
+        window.idAtivo = null;
 
         onAuthStateChanged(auth, user => {
             if (user) {
@@ -162,11 +240,6 @@
             }
         });
 
-        document.getElementById('btnLogin').addEventListener('click', async () => {
-            try { await signInWithEmailAndPassword(auth, document.getElementById('loginEmail').value, document.getElementById('loginPass').value); } 
-            catch(e) { alert("Credenciais incorretas."); }
-        });
-
         function ouvirBanco() {
             onSnapshot(colRef, (snapshot) => {
                 window.db_local = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -174,174 +247,160 @@
             });
         }
 
-        window.openModal = (id) => document.getElementById(id).classList.remove('hidden');
-        window.closeModal = (id) => { document.getElementById(id).classList.add('hidden'); window.idxAtivo = null; };
-
-        window.maskCPF = (i) => {
-            let v = i.value.replace(/\D/g, "");
-            v = v.replace(/(\d{3})(\d)/, "$1.$2");
-            v = v.replace(/(\d{3})(\d)/, "$1.$2");
-            v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-            i.value = v;
-        };
-        window.maskTel = (i) => {
-            let v = i.value.replace(/\D/g, "");
-            v = v.replace(/^(\d{2})(\d)/g, "($1) $2");
-            v = v.replace(/(\d)(\d{4})$/, "$1-$2");
-            i.value = v;
-        };
-        window.maskDinheiro = (i) => {
-            let v = i.value.replace(/\D/g,'');
-            v = (v/100).toFixed(2) + '';
-            v = v.replace(".", ",");
-            v = v.replace(/(\d)(\d{3})(\d{3}),/g, "$1.$2.$3,");
-            v = v.replace(/(\d)(\d{3}),/g, "$1.$2,");
-            i.value = "R$ " + v;
-        };
-
-        document.getElementById('formAluno').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('cpf').value.replace(/\D/g, '');
-            const novo = {
-                nome: document.getElementById('nome').value.toUpperCase(),
-                cpf: document.getElementById('cpf').value,
-                tel: document.getElementById('tel').value,
-                tipo: document.getElementById('tipo').value,
-                unidade: document.getElementById('unidade').value,
-                status: 'Pendente',
-                parcelaAtual: 0,
-                marcado: false
-            };
-            await setDoc(doc(db, "negociacoes", id), novo);
-            closeModal('modalAluno');
-            e.target.reset();
-        });
-
-        window.toggleMarcador = async (id, estadoAtual) => {
-            await updateDoc(doc(db, "negociacoes", id), { marcado: !estadoAtual });
-        };
-
-        window.prepararAcordo = (idx) => {
-            window.idxAtivo = idx;
-            document.getElementById('nomeAlunoAcordo').innerText = "Aluno: " + window.db_local[idx].nome;
-            document.getElementById('dataVencimentoManual').value = "";
-            openModal('modalAcordo');
-        };
-
-        window.gerarEnviar = async () => {
-            const a = window.db_local[window.idxAtivo];
-            const vAV = document.getElementById('valorAVista').value;
-            const vAC = document.getElementById('valorAcordo').value;
-            const ent = document.getElementById('entrada').value;
-            const parc = parseInt(document.getElementById('numParcelas').value);
-            const vPM = document.getElementById('vlrParcelaManual').value;
-            const remat = document.getElementById('checkRematricula').checked;
-            
-            const dataManual = document.getElementById('dataVencimentoManual').value;
-            let venc;
-
-            if (dataManual) {
-                const [ano, mes, dia] = dataManual.split('-');
-                venc = `${dia}/${mes}/${ano}`;
-            } else {
-                const dt = new Date(); 
-                dt.setDate(dt.getDate() + 4);
-                venc = dt.toLocaleDateString('pt-BR');
-            }
-
-            let msg = `Olá, *${a.nome}*! 👋\n\nIdentificamos uma oportunidade especial para regularizar sua situação na unidade *${a.unidade}*. Nosso objetivo é que você continue focado no seu crescimento!\n\n`;
-            if(remat) msg += `🚀 *SEU SONHO NÃO PODE PARAR!*\nReativando agora, sua plataforma volta em até 7 dias úteis.\n\n`;
-            msg += `💳 *OPÇÃO CARTÃO (Liberação entre 3 a 4 dias úteis):*\nDeixe tudo em dia por apenas *${vAV}* (em até 12x).\n\n`;
-            msg += `📄 *OPÇÃO BOLETO PARCELADO (Liberação da plataforma em até 7 dias úteis):*\nEntrada de *${ent}* + *${parc}x* de *${vPM}*.\n\n`;
-            msg += `📅 *Vencimento da Entrada:* ${venc}\n\nPara fechar agora e garantir essa condição, responda *SIM*.`;
-
-            await updateDoc(doc(db, "negociacoes", a.id), { 
-                status: 'Enviado', 
-                fin: {venc, totalParcelas: parc, valorParcela: vPM, valorAcordo: vAC} 
-            });
-            
-            closeModal('modalAcordo');
-            window.open(`https://api.whatsapp.com/send?phone=55${a.tel.replace(/\D/g,'')}&text=${encodeURIComponent(msg)}`);
-        };
-
-        window.enviarProximaParcela = async (idx) => {
-            const a = window.db_local[idx];
-            const prox = (a.parcelaAtual || 0) + 1;
-            if (prox > a.fin.totalParcelas) return alert("Acordo 100% quitado!");
-
-            const msg = `Olá, *${a.nome}*! 👋\n\nEsperamos que esteja tudo bem com seus estudos! Segue o boleto da sua parcela *${prox}/${a.fin.totalParcelas}* do acordo firmado com a unidade *${a.unidade}*.\n\n💰 *Valor:* ${a.fin.valorParcela}\n\n🔗 Você também pode localizar todas as suas parcelas e o histórico financeiro diretamente em nosso portal oficial:\nhttps://www.vaiqta.com.br/\n\nBons estudos! 📚`;
-            
-            const novoVenc = new Date();
-            novoVenc.setDate(novoVenc.getDate() + 30);
-            
-            await updateDoc(doc(db, "negociacoes", a.id), { 
-                parcelaAtual: prox,
-                "fin.venc": novoVenc.toLocaleDateString('pt-BR')
-            });
-            window.open(`https://api.whatsapp.com/send?phone=55${a.tel.replace(/\D/g,'')}&text=${encodeURIComponent(msg)}`);
-        };
-
-        window.confirmar = async (idx) => {
-            if(confirm("Confirmar fechamento? O sistema iniciará o controle de mensalidades.")) {
-                await updateDoc(doc(db, "negociacoes", window.db_local[idx].id), { status: 'Confirmado', parcelaAtual: 0 });
-            }
-        };
-
-        window.excluirAluno = async (idx) => {
-            if(confirm("Excluir registro permanentemente?")) await deleteDoc(doc(db, "negociacoes", window.db_local[idx].id));
+        window.toggleSidebar = () => {
+            const sb = document.getElementById('sidebar');
+            sb.classList.toggle('collapsed');
         };
 
         window.renderizarTabela = () => {
             const lista = document.getElementById('listaAlunos');
-            const filtroU = document.getElementById('filtroUnidade').value;
-            const busca = document.getElementById('buscaGeral').value.replace(/\D/g, '');
+            const busca = document.getElementById('buscaGeral').value.toUpperCase();
+            const fUni = document.getElementById('filtroUnidade').value;
+            const fTipo = document.getElementById('filtroTipo').value;
+            const fFin = document.getElementById('filtroStatusFin').value;
+            
             lista.innerHTML = "";
-            let f=0, e=0;
+            let tTotal=0, tVenc=0, tAlert=0, tDia=0;
+            const hoje = new Date(); hoje.setHours(0,0,0,0);
 
-            window.db_local.forEach((a, idx) => {
-                if(filtroU !== "Todas" && a.unidade !== filtroU) return;
-                const cpfLimpo = a.cpf ? a.cpf.replace(/\D/g, '') : '';
-                if(busca && !cpfLimpo.includes(busca)) return;
+            const filtrados = [...window.db_local]
+                .sort((a, b) => a.nome.localeCompare(b.nome))
+                .filter(a => {
+                    let status = "EmDia";
+                    if(a.fin?.venc) {
+                        const [d, m, y] = a.fin.venc.split('/');
+                        const dVenc = new Date(y, m - 1, d);
+                        const diff = Math.ceil((dVenc - hoje) / (1000 * 60 * 60 * 24));
+                        if(diff < 0) status = "Vencido";
+                        else if(diff <= 5) status = "Alerta";
+                    }
+                    const mBusca = !busca || a.nome.includes(busca) || a.cpf.includes(busca);
+                    const mUni = fUni === "Todas" || a.unidade === fUni;
+                    const mTipo = fTipo === "Todos" || a.tipo === fTipo;
+                    if(mBusca && mUni && mTipo) {
+                        tTotal++;
+                        if(status === "Vencido") tVenc++; else if(status === "Alerta") tAlert++; else tDia++;
+                    }
+                    return mBusca && mUni && mTipo && (fFin === "Todos" || status === fFin);
+                });
 
-                if(a.status === 'Confirmado') f++;
-                if(a.status === 'Enviado') e++;
-
-                let sBadge = `<span class="text-gray-500 font-bold italic text-[10px]">Pendente</span>`;
-                if(a.status === 'Enviado') sBadge = `<span class="text-blue-400 font-bold italic text-[10px]">Aguardando</span>`;
-                if(a.status === 'Confirmado') {
-                    const p = a.parcelaAtual || 0;
-                    const t = a.fin ? a.fin.totalParcelas : 0;
-                    sBadge = `<span class="text-green-500 font-black text-[10px]">ATIVO: ${p}/${t}</span>`;
+            filtrados.forEach((a) => {
+                let sClass = "";
+                if(a.fin?.venc) {
+                    const [d, m, y] = a.fin.venc.split('/');
+                    const dVenc = new Date(y, m - 1, d);
+                    const diff = Math.ceil((dVenc - hoje) / (1000 * 60 * 60 * 24));
+                    sClass = diff < 0 ? "row-vencido" : (diff <= 5 ? "row-alerta" : "");
                 }
-
-                const isMarcado = a.marcado ? 'text-orange' : 'text-gray-700';
-
                 lista.innerHTML += `
-                    <tr class="hover:bg-slate-800 transition border-b border-gray-800 text-sm ${a.marcado ? 'bg-orange/5' : ''}">
+                    <tr class="hover:bg-slate-800 border-b border-gray-800 ${sClass}">
                         <td class="p-4">
-                            <button onclick="toggleMarcador('${a.id}', ${a.marcado || false})" class="${isMarcado} hover:scale-110 transition">
-                                <i class="fas fa-bookmark fa-lg"></i>
-                            </button>
+                            <div class="font-bold text-[12px] uppercase">${a.nome}</div>
+                            <div class="text-[9px] text-gray-500 font-black">${a.unidade} | ${a.cpf} | <span class="text-orange">${a.tipo || '---'}</span></div>
                         </td>
-                        <td class="p-4">
-                            <div class="font-bold uppercase">${a.nome}</div>
-                            <div class="text-[10px] text-gray-400 font-mono">${a.cpf || ''}</div>
-                        </td>
-                        <td class="p-4 text-xs">${a.unidade}</td>
-                        <td class="p-4">${sBadge}</td>
-                        <td class="p-4 text-xs">${a.fin ? a.fin.venc : '---'}</td>
-                        <td class="p-4 flex justify-center gap-4">
-                            ${a.status === 'Confirmado' ? 
-                                `<button onclick="enviarProximaParcela(${idx})" class="text-blue-400"><i class="fas fa-paper-plane fa-lg"></i></button>` : 
-                                `<button onclick="prepararAcordo(${idx})" class="text-orange"><i class="fas fa-handshake fa-lg"></i></button>`
-                            }
-                            <button onclick="confirmar(${idx})" class="text-green-500"><i class="fas fa-check-double fa-lg"></i></button>
-                            <button onclick="excluirAluno(${idx})" class="text-red-900"><i class="fas fa-trash"></i></button>
+                        <td class="p-4 font-bold text-orange">${a.parcelaAtual || 0}/${a.fin?.totalParcelas || 0}</td>
+                        <td class="p-4 font-mono text-xs">${a.fin?.venc || '---'}</td>
+                        <td class="p-4 flex justify-center gap-4 text-lg">
+                            <button onclick="enviarCobrancaMensal('${a.id}')" class="text-blue-400"><i class="fas fa-paper-plane"></i></button>
+                            <button onclick="prepararAcordo('${a.id}')" class="text-gray-500"><i class="fas fa-edit"></i></button>
+                            <button onclick="excluirAluno('${a.id}')" class="text-red-900"><i class="fas fa-trash"></i></button>
                         </td>
                     </tr>`;
             });
-            document.getElementById('cardFechados').innerText = f;
-            document.getElementById('cardEnviados').innerText = e;
+            document.getElementById('cardTotal').innerText = tTotal;
+            document.getElementById('cardVencidos').innerText = tVenc;
+            document.getElementById('cardAlerta').innerText = tAlert;
+            document.getElementById('cardEmDia').innerText = tDia;
+        };
+
+        window.prepararAcordo = (id) => {
+            window.idAtivo = id;
+            const a = window.db_local.find(al => al.id === id);
+            if(!a) return;
+            document.getElementById('nomeAlunoAcordo').innerText = a.nome;
+            document.getElementById('descricaoDebito').value = a.fin?.descricao || '';
+            document.getElementById('valorTotalBruto').value = a.fin?.valorTotalBruto || '';
+            document.getElementById('valorAVista').value = a.fin?.valorAVista || '';
+            document.getElementById('entrada').value = a.fin?.valorEntrada || '';
+            document.getElementById('vlrParcelaManual').value = a.fin?.valorParcela || '';
+            document.getElementById('numParcelas').value = a.fin?.totalParcelas || '';
+            document.getElementById('parcelaAtualManual').value = a.parcelaAtual || 0;
+            openModal('modalAcordo');
+        };
+
+        window.salvarAcordo = async (enviar) => {
+            const a = window.db_local.find(al => al.id === window.idAtivo);
+            const pAtu = parseInt(document.getElementById('parcelaAtualManual').value) || 0;
+            const dataIni = document.getElementById('dataVencimentoManual').value;
+            let dataObj = dataIni ? new Date(dataIni + "T12:00:00") : new Date();
+            if(pAtu > 0) dataObj.setMonth(dataObj.getMonth() + pAtu);
+            const vencFinal = dataObj.toLocaleDateString('pt-BR');
+
+            const info = {
+                venc: vencFinal,
+                valorParcela: document.getElementById('vlrParcelaManual').value,
+                totalParcelas: parseInt(document.getElementById('numParcelas').value) || 0,
+                valorEntrada: document.getElementById('entrada').value,
+                valorTotalBruto: document.getElementById('valorTotalBruto').value,
+                valorAVista: document.getElementById('valorAVista').value,
+                descricao: document.getElementById('descricaoDebito').value
+            };
+
+            await updateDoc(doc(db, "negociacoes", a.id), { parcelaAtual: pAtu, fin: info });
+            closeModal('modalAcordo');
+
+            if(enviar) {
+                const tom = document.getElementById('tomMensagem').value;
+                let msg = "";
+                if(tom === "motivado") {
+                    msg = `Olá, *${a.nome}*! 👋\n\nSou da equipe financeira da *${a.unidade}* e estou passando com uma notícia importante!\n\nOlhando aqui sua trajetória, vi que falta pouco para você dar o próximo passo na sua carreira. Não queremos que nada interrompa o seu sonho de conquistar seu diploma! 🎓✨\n\nPreparamos uma condição exclusiva para você zerar sua pendência financeira de *${info.descricao}* e já garantir sua *REMATRÍCULA* para o próximo semestre. 🚀\n\n✅ *Oportunidade Única:*\n• *À vista no PIX (com desconto):* ${info.valorAVista} (pode ser parcelado no cartão de crédito em até 12x iguais)\n• *Parcelado no Boleto:* Entrada de ${info.valorEntrada} + ${info.totalParcelas}x de ${info.valorParcela}\n\nVamos garantir sua vaga e continuar essa jornada juntos? Me avisa aqui qual opção fica melhor para você!`;
+                } else {
+                    msg = `Olá, *${a.nome}*! 👋 \n\nSou da equipe de regularização financeira da *${a.unidade}*.\n\nIdentificamos uma pendência em aberto referente a *${info.descricao}* e preparamos uma proposta especial para facilitar a atualização da sua situação conosco. Nosso objetivo é oferecer flexibilidade para que você mantenha seu histórico regularizado:\n\n💰 *Opção à Vista (PIX):* ${info.valorAVista}\n📄 *Plano Parcelado:* Entrada de ${info.valorEntrada} + ${info.totalParcelas}x de ${info.valorParcela}\n\nAcreditamos que uma dessas opções se encaixa no seu planejamento atual. Qual delas fica melhor para você? \n\nCaso tenha alguma dúvida ou precise de um plano diferente, estamos à disposição para conversar e encontrar a melhor solução!`;
+                }
+                window.open(`https://api.whatsapp.com/send?phone=55${a.tel.replace(/\D/g,'')}&text=${encodeURIComponent(msg)}`);
+            }
+        };
+
+        window.enviarCobrancaMensal = async (id) => {
+            const a = window.db_local.find(al => al.id === id);
+            if (!a.fin) return alert("Configure o acordo primeiro!");
+            const prox = (a.parcelaAtual || 0) + 1;
+            if (confirm(`Avançar para parcela ${prox}?`)) {
+                const parts = a.fin.venc.split('/');
+                const d = new Date(parts[2], parts[1] - 1, parts[0]);
+                d.setMonth(d.getMonth() + 1);
+                const novaData = d.toLocaleDateString('pt-BR');
+                await updateDoc(doc(db, "negociacoes", a.id), { parcelaAtual: prox, "fin.venc": novaData });
+                const msg = `Olá, *${a.nome}*! 👋\n\nSegue o boleto referente à parcela *${prox}/${a.fin.totalParcelas}* (*${a.unidade}*).\n\n💰 *Valor:* ${prox === 1 ? a.fin.valorEntrada : a.fin.valorParcela}\n📅 *Vencimento:* ${a.fin.venc}\n\nVocê pode acompanhar seu financeiro e baixar os boletos atualizados diretamente no nosso portal:\n🌐 https://www.vaiqta.com.br/\n\nO boleto também segue em anexo abaixo. Qualquer dúvida, estamos à disposição!`;
+                window.open(`https://api.whatsapp.com/send?phone=55${a.tel.replace(/\D/g,'')}&text=${encodeURIComponent(msg)}`);
+            }
+        };
+
+        window.salvarNovoAluno = async () => {
+            const cpf = document.getElementById('novoCpf').value.replace(/\D/g, '');
+            if(!cpf) return alert("CPF obrigatório");
+            await setDoc(doc(db, "negociacoes", cpf), {
+                nome: document.getElementById('novoNome').value.toUpperCase(),
+                cpf: document.getElementById('novoCpf').value,
+                tel: document.getElementById('novoTel').value,
+                unidade: document.getElementById('novoUnidade').value,
+                tipo: document.getElementById('novoTipo').value,
+                parcelaAtual: 0
+            });
+            closeModal('modalAluno');
+        };
+
+        window.excluirAluno = async (id) => { if(confirm("Excluir definitivamente?")) await deleteDoc(doc(db, "negociacoes", id)); };
+        window.openModal = (id) => document.getElementById(id).classList.remove('hidden');
+        window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
+        window.maskCPF = (i) => { let v = i.value.replace(/\D/g, ""); v = v.replace(/(\d{3})(\d)/, "$1.$2"); v = v.replace(/(\d{3})(\d)/, "$1.$2"); v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2"); i.value = v; };
+        window.maskTel = (i) => { let v = i.value.replace(/\D/g, ""); v = v.replace(/^(\d{2})(\d)/g, "($1) $2"); v = v.replace(/(\d)(\d{4})$/, "$1-$2"); i.value = v; };
+        window.maskDinheiro = (i) => { let v = i.value.replace(/\D/g,''); v = (v/100).toFixed(2) + ''; v = v.replace(".", ","); v = v.replace(/(\d)(\d{3}),/g, "$1.$2,"); i.value = "R$ " + v; };
+
+        document.getElementById('btnLogin').onclick = async () => {
+            const e = document.getElementById('loginEmail').value;
+            const p = document.getElementById('loginPass').value;
+            try { await signInWithEmailAndPassword(auth, e, p); } catch(e) { alert("Credenciais Inválidas"); }
         };
     </script>
 </body>
