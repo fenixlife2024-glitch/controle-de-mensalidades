@@ -441,7 +441,6 @@
         renderizar();
     }
 
-    // LÓGICA DE MENSAGENS ATUALIZADA (ENVIAR E LEMBRETE)
     window.gerarTextoZap = function(aluno) {
         const hoje = new Date(); hoje.setHours(0,0,0,0);
         const mensalidadeAtual = aluno.mensalidades?.find(m => !m.pago);
@@ -585,17 +584,30 @@
         renderizarPainel();
     }
 
+    // MELHORIA SOLICITADA: Reseta status de envio mas mantém meses individuais pagos
     window.resetarStatusEnvio = async function() {
-        if(!confirm("Resetar todos os Enviados e Inválidos para Pendente?")) return;
+        if(!confirm("Deseja resetar o status de TODOS os alunos para Pendente? (As mensalidades pagas individualmente serão mantidas)")) return;
+        
         const batch = writeBatch(db);
-        Object.values(window.alunos).forEach(a => {
-            if(a.controleEnvio === 'Enviado' || a.controleEnvio === 'Número Inválido') {
-                batch.update(doc(db, "alunos", a.ra), { controleEnvio: 'Pendente' });
-                a.controleEnvio = 'Pendente';
-            }
+        const listaAlunos = Object.values(window.alunos);
+
+        if (listaAlunos.length === 0) return;
+
+        listaAlunos.forEach(a => {
+            // Define o status de envio para Pendente para todos, inclusive os com status 'Pago'
+            batch.update(doc(db, "alunos", a.ra), { controleEnvio: 'Pendente' });
+            // Atualiza o estado local para refletir na tela imediatamente
+            a.controleEnvio = 'Pendente';
         });
-        await batch.commit();
-        renderizar();
+
+        try {
+            await batch.commit();
+            renderizar();
+            renderizarPainel();
+            alert("Todos os status de envio foram resetados para Pendente!");
+        } catch (e) {
+            alert("Erro ao resetar status: " + e.message);
+        }
     }
 
     window.importarCSV = function(input) { 
