@@ -7,7 +7,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <style>
-        :root { --primary: #1e293b; --accent: #3b82f6; --success: #22c55e; --warning: #eab308; --danger: #ef4444; --bg: #f8fafc; --sidebar-w: 240px; }
+        :root { --primary: #1e293b; --accent: #3b82f6; --success: #22c55e; --warning: #eab308; --danger: #ef4444; --bg: #f8fafc; --sidebar-w: 240px; --chamado: #8b5cf6; --chamado-atrasado: #dc2626; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #334155; display: flex; height: 100vh; overflow: hidden; }
         
         .sidebar { 
@@ -50,6 +50,7 @@
         tr.row-pago { background-color: #f0fdf4 !important; }
         tr.row-enviado { background-color: #fffbeb !important; }
         tr.row-invalido { background-color: #fef2f2 !important; }
+        tr.row-chamado-atrasado { background-color: #fef2f2 !important; }
         .nome-doc-pendente { background-color: #fef08a !important; color: #854d0e !important; padding: 2px 5px; border-radius: 4px; }
 
         .mes-box { width: 24px; height: 24px; border-radius: 5px; border: 1px solid #cbd5e1; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: bold; cursor: pointer; }
@@ -61,16 +62,40 @@
         .btn-primary { background: var(--accent); color: white; }
         .btn-danger { background: var(--danger); color: white; }
         .btn-warning { background: var(--warning); color: white; }
+        .btn-success { background: var(--success); color: white; }
         
         .btn-toggle { background: none; border: none; cursor: pointer; font-size: 20px; color: var(--primary); padding: 5px; margin-right: 15px; display: flex; align-items: center; }
 
         .modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
         .modal-content { background: white; padding: 25px; border-radius: 16px; width: 95%; max-width: 550px; max-height: 90vh; overflow-y: auto; }
         #login-screen { position: fixed; inset: 0; background: var(--primary); display: flex; justify-content: center; align-items: center; z-index: 2000; }
-        .star-icon, .doc-icon { cursor: pointer; font-size: 18px; color: #cbd5e1; transition: 0.2s; text-decoration: none; }
+        .star-icon, .doc-icon, .chamado-icon { cursor: pointer; font-size: 18px; color: #cbd5e1; transition: 0.2s; text-decoration: none; }
         .star-active { color: #f59e0b !important; }
         .doc-active { color: var(--danger) !important; }
+        .chamado-active { color: var(--chamado) !important; text-shadow: 0 0 8px rgba(139, 92, 246, 0.5); }
+        .chamado-atrasado { color: var(--chamado-atrasado) !important; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
         .grid-form { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        
+        /* Estilos para lista de chamados */
+        .chamado-item { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 10px; position: relative; }
+        .chamado-item.resolvido { opacity: 0.7; background: #f0fdf4; border-color: #86efac; }
+        .chamado-item.atrasado { border-color: var(--chamado-atrasado); background: #fef2f2; }
+        .chamado-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .chamado-protocolo { font-weight: 700; color: var(--chamado); font-size: 12px; background: #ede9fe; padding: 2px 8px; border-radius: 4px; }
+        .chamado-protocolo.atrasado { background: var(--chamado-atrasado); color: white; }
+        .chamado-data { font-size: 11px; color: #64748b; }
+        .chamado-motivo { font-size: 13px; color: #334155; margin-bottom: 8px; font-weight: 500; }
+        .chamado-retorno { font-size: 11px; color: #dc2626; font-weight: 600; background: #fef2f2; padding: 4px 8px; border-radius: 4px; display: inline-block; }
+        .chamado-retorno.ok { color: #16a34a; background: #f0fdf4; }
+        .chamado-retorno.atrasado { background: var(--chamado-atrasado); color: white; animation: pulse 2s infinite; }
+        .btn-chamado-small { padding: 4px 8px; font-size: 10px; border-radius: 4px; }
+        .badge-chamados { position: absolute; top: -5px; right: -5px; background: var(--chamado); color: white; font-size: 9px; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+        .badge-chamados.atrasado { background: var(--chamado-atrasado); }
+        .chamado-retorno-central { font-size: 11px; color: #059669; background: #d1fae5; padding: 6px; border-radius: 4px; margin-top: 8px; border-left: 3px solid var(--success); }
+        .chamado-status { font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-left: 8px; }
+        .chamado-status.pendente { background: #fef3c7; color: #92400e; }
+        .chamado-status.resolvido { background: #d1fae5; color: #065f46; }
     </style>
 </head>
 <body>
@@ -143,6 +168,18 @@
         </div>
         <div class="input-group"><label>Categoria</label><select id="filtroCategoria" class="form-control" onchange="renderizar(); renderizarPainel();"><option value="">Todas</option><option value="PTC">PTC</option><option value="Extranet">Extranet</option></select></div>
         <div class="input-group"><label>Prazo 9% Off</label><input type="text" id="prazoCampanha" class="form-control" value="08/01" oninput="renderizar()"></div>
+        
+        <!-- NOVO FILTRO DE CHAMADOS -->
+        <div class="input-group">
+            <label>Chamados 🎫</label>
+            <select id="filtroChamados" class="form-control" onchange="renderizar()">
+                <option value="todos">Todos</option>
+                <option value="com_chamados">Com Chamados</option>
+                <option value="chamados_pendentes">Chamados Pendentes</option>
+                <option value="chamados_atrasados">Chamados Atrasados</option>
+            </select>
+        </div>
+        
         <div class="input-group"><label style="color:var(--accent)">Importar CSV</label><input type="file" id="csvInput" accept=".csv" class="form-control" onchange="importarCSV(this)"></div>
     </div>
 
@@ -150,7 +187,7 @@
     
     <div style="flex-grow:1; overflow:auto; background:white; border-radius:12px; border:1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
         <table>
-            <thead><tr><th style="width:20px;"><input type="checkbox" onclick="toggleTodos(this)"></th><th style="width:30px;">★</th><th style="width:30px;">Doc</th><th>RA</th><th>Nome do Aluno</th><th>Meses</th><th>Status</th><th>WhatsApp</th><th>Lembrete</th></tr></thead>
+            <thead><tr><th style="width:20px;"><input type="checkbox" onclick="toggleTodos(this)"></th><th style="width:30px;">★</th><th style="width:30px;">Doc</th><th style="width:30px;">🎫</th><th>RA</th><th>Nome do Aluno</th><th>Meses</th><th>Status</th><th>WhatsApp</th><th>Lembrete</th></tr></thead>
             <tbody id="corpoTabela"></tbody>
         </table>
     </div>
@@ -173,7 +210,73 @@
         <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
         <label style="margin-bottom:10px; display:block; font-weight:bold;">Vencimentos das Mensalidades:</label>
         <div id="listaMensalidades" style="display:flex; flex-direction:column; gap:8px; margin-bottom:20px;"></div>
+        
+        <!-- SEÇÃO DE CHAMADOS -->
+        <hr style="border:0; border-top:2px solid #e2e8f0; margin:25px 0;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <label style="font-weight:bold; color:var(--chamado); display:flex; align-items:center; gap:8px;">
+                🎫 Chamados de Suporte
+                <span style="font-size:10px; font-weight:normal; color:#64748b; background:#f1f5f9; padding:2px 8px; border-radius:4px;">
+                    Aguarde retorno da central e confirme antes de dar baixa
+                </span>
+            </label>
+            <button onclick="abrirModalNovoChamado()" class="btn btn-primary" style="padding:6px 12px; font-size:11px;">➕ Novo Chamado</button>
+        </div>
+        <div id="listaChamados" style="max-height:300px; overflow-y:auto; margin-bottom:20px;">
+            <p style="color:#94a3b8; font-size:12px; text-align:center; padding:20px;">Nenhum chamado registrado</p>
+        </div>
+        
         <button onclick="salvarAluno()" class="btn btn-primary" style="width:100%; padding:12px; justify-content:center; font-size:14px;">💾 Salvar Informações</button>
+    </div>
+</div>
+
+<!-- MODAL PARA NOVO CHAMADO -->
+<div id="modalChamado" class="modal">
+    <div class="modal-content" style="max-width: 450px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3 style="margin:0; font-size:18px; color:var(--chamado);">🎫 Abrir Novo Chamado</h3>
+            <button onclick="fecharModalChamado()" style="border:none; background:none; cursor:pointer; font-size:28px; color:#94a3b8;">&times;</button>
+        </div>
+        <div class="input-group" style="margin-bottom:15px;">
+            <label>Motivo do Chamado *</label>
+            <input type="text" id="chamadoMotivo" class="form-control" placeholder="Ex: Problema no boleto, Dúvida sobre matrícula...">
+        </div>
+        <div class="input-group" style="margin-bottom:15px;">
+            <label>Protocolo da Central *</label>
+            <input type="text" id="chamadoProtocolo" class="form-control" placeholder="Ex: #123456">
+        </div>
+        <div class="input-group" style="margin-bottom:20px;">
+            <label>Data Prevista para Retorno *</label>
+            <input type="date" id="chamadoRetorno" class="form-control">
+        </div>
+        <div style="background:#fef3c7; border-left:4px solid #f59e0b; padding:12px; border-radius:4px; margin-bottom:20px; font-size:11px; color:#92400e;">
+            <strong>⚠️ Importante:</strong> Após abrir o chamado, aguarde o retorno da central. 
+            Quando resolverem, você deverá informar o aluno e dar baixa manualmente aqui no sistema.
+        </div>
+        <button onclick="salvarNovoChamado()" class="btn btn-primary" style="width:100%; padding:12px; justify-content:center; background:var(--chamado);">💾 Abrir Chamado</button>
+    </div>
+</div>
+
+<!-- MODAL PARA DAR BAIXA NO CHAMADO -->
+<div id="modalBaixa" class="modal">
+    <div class="modal-content" style="max-width: 450px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3 style="margin:0; font-size:18px; color:var(--success);">✅ Dar Baixa no Chamado</h3>
+            <button onclick="fecharModalBaixa()" style="border:none; background:none; cursor:pointer; font-size:28px; color:#94a3b8;">&times;</button>
+        </div>
+        <div style="background:#dbeafe; border-left:4px solid var(--accent); padding:12px; border-radius:4px; margin-bottom:20px; font-size:12px;">
+            <strong>Chamado:</strong> <span id="baixaProtocolo"></span><br>
+            <strong>Motivo:</strong> <span id="baixaMotivo"></span><br>
+            <strong>Aberto em:</strong> <span id="baixaData"></span>
+        </div>
+        <div class="input-group" style="margin-bottom:20px;">
+            <label>Retorno da Central / Solução *</label>
+            <textarea id="baixaRetornoCentral" class="form-control" rows="3" placeholder="Descreva o que a central informou como solução..."></textarea>
+        </div>
+        <div style="background:#fef3c7; border-left:4px solid #f59e0b; padding:12px; border-radius:4px; margin-bottom:20px; font-size:11px; color:#92400e;">
+            <strong>📢 Lembre-se:</strong> Antes de dar baixa, informe o aluno sobre a resolução via WhatsApp!
+        </div>
+        <button onclick="confirmarBaixaChamado()" class="btn btn-success" style="width:100%; padding:12px; justify-content:center;">✅ Confirmar Baixa e Notificar</button>
     </div>
 </div>
 
@@ -217,6 +320,8 @@
         <div class="card" style="border-left-color: var(--success)"><h4>Pagos (Mês)</h4><span class="val" id="d-pag-mes">0</span></div>
         <div class="card" style="border-left-color: var(--danger)"><h4>Em Atraso</h4><span class="val" id="d-atraso">0</span></div>
         <div class="card" style="border-left-color: var(--warning)"><h4>Enviados</h4><span class="val" id="d-env">0</span></div>
+        <div class="card" style="border-left-color: var(--chamado)"><h4>Chamados Pendentes</h4><span class="val" id="d-chamados">0</span></div>
+        <div class="card" style="border-left-color: var(--chamado-atrasado)"><h4>Chamados Atrasados</h4><span class="val" id="d-chamados-atrasados">0</span></div>
     </div>
 </div>
 
@@ -231,6 +336,8 @@
     const auth = getAuth(app);
 
     window.alunos = {};
+    let raEmEdicao = null;
+    let chamadoEmBaixa = null;
     const nomesMesesLongos = ["", "JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO", "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO"];
 
     onAuthStateChanged(auth, user => { if (user) { document.getElementById('login-screen').style.display='none'; document.getElementById('mainSidebar').style.display='flex'; document.getElementById('mainContainer').style.display='flex'; carregarDados(); } });
@@ -267,6 +374,7 @@
     }
 
     window.abrirModalCadastro = function() {
+        raEmEdicao = null;
         document.getElementById('modalTitle').innerText = "Cadastrar Novo Aluno";
         document.getElementById('mRA').value = "";
         document.getElementById('mRA').disabled = false;
@@ -286,6 +394,7 @@
         for(let i=mI; i<=mF; i++) {
             renderizarLinhaMensalidade({mes: i, vencimento: `${ano}-${String(i).padStart(2,'0')}-10`, pago: false}, i-mI);
         }
+        renderizarListaChamados([]);
         document.getElementById('modal').style.display = 'flex';
     }
 
@@ -297,6 +406,7 @@
     }
 
     window.abrirModalEdicao = function(ra) {
+        raEmEdicao = ra;
         const aluno = window.alunos[ra];
         document.getElementById('modalTitle').innerText = "Editando: " + aluno.nome;
         document.getElementById('mRA').value = aluno.ra;
@@ -312,6 +422,10 @@
         aluno.mensalidades.forEach((m, idx) => {
             renderizarLinhaMensalidade(m, idx);
         });
+        
+        // Renderizar chamados existentes
+        renderizarListaChamados(aluno.chamados || []);
+        
         document.getElementById('modal').style.display = 'flex';
     }
 
@@ -328,6 +442,196 @@
         document.getElementById('listaMensalidades').appendChild(div);
     }
 
+    // FUNÇÕES DE CHAMADOS
+    window.abrirModalNovoChamado = function() {
+        document.getElementById('chamadoMotivo').value = '';
+        document.getElementById('chamadoProtocolo').value = '';
+        document.getElementById('chamadoRetorno').value = '';
+        document.getElementById('modalChamado').style.display = 'flex';
+    }
+
+    window.fecharModalChamado = function() {
+        document.getElementById('modalChamado').style.display = 'none';
+    }
+
+    window.salvarNovoChamado = async function() {
+        const motivo = document.getElementById('chamadoMotivo').value.trim();
+        const protocolo = document.getElementById('chamadoProtocolo').value.trim();
+        const retorno = document.getElementById('chamadoRetorno').value;
+        
+        if(!motivo || !protocolo || !retorno) {
+            return alert("Preencha todos os campos obrigatórios!");
+        }
+        
+        const novoChamado = {
+            id: Date.now().toString(),
+            motivo: motivo,
+            protocolo: protocolo,
+            dataRetorno: retorno,
+            dataAbertura: new Date().toISOString().split('T')[0],
+            resolvido: false,
+            retornoCentral: null,
+            dataBaixa: null
+        };
+        
+        const aluno = window.alunos[raEmEdicao];
+        if(!aluno.chamados) aluno.chamados = [];
+        aluno.chamados.push(novoChamado);
+        
+        // Salvar no Firebase
+        await updateDoc(doc(db, "alunos", raEmEdicao), { chamados: aluno.chamados });
+        
+        fecharModalChamado();
+        renderizarListaChamados(aluno.chamados);
+        renderizar(); // Atualiza o ícone na tabela
+        renderizarPainel(); // Atualiza contador no dashboard
+    }
+
+    // Abrir modal para dar baixa
+    window.abrirModalBaixa = function(chamadoId) {
+        const aluno = window.alunos[raEmEdicao];
+        const chamado = aluno.chamados.find(c => c.id === chamadoId);
+        if(!chamado) return;
+        
+        chamadoEmBaixa = chamadoId;
+        document.getElementById('baixaProtocolo').innerText = chamado.protocolo;
+        document.getElementById('baixaMotivo').innerText = chamado.motivo;
+        document.getElementById('baixaData').innerText = chamado.dataAbertura;
+        document.getElementById('baixaRetornoCentral').value = '';
+        document.getElementById('modalBaixa').style.display = 'flex';
+    }
+
+    window.fecharModalBaixa = function() {
+        document.getElementById('modalBaixa').style.display = 'none';
+        chamadoEmBaixa = null;
+    }
+
+    window.confirmarBaixaChamado = async function() {
+        const retornoCentral = document.getElementById('baixaRetornoCentral').value.trim();
+        if(!retornoCentral) {
+            return alert("Descreva o retorno da central antes de dar baixa!");
+        }
+        
+        const aluno = window.alunos[raEmEdicao];
+        const chamado = aluno.chamados.find(c => c.id === chamadoEmBaixa);
+        if(chamado) {
+            chamado.resolvido = true;
+            chamado.retornoCentral = retornoCentral;
+            chamado.dataBaixa = new Date().toISOString().split('T')[0];
+            
+            await updateDoc(doc(db, "alunos", raEmEdicao), { chamados: aluno.chamados });
+            
+            // Enviar WhatsApp para o aluno informando a resolução
+            const msg = `Olá ${aluno.nome}! 🎉\n\nSeu chamado *${chamado.protocolo}* sobre "${chamado.motivo}" foi resolvido pela central!\n\n📋 *Solução:* ${retornoCentral}\n\nCaso ainda tenha dúvidas, estamos à disposição.`;
+            window.open(`https://wa.me/55${aluno.tel}?text=${encodeURIComponent(msg)}`, '_blank');
+            
+            fecharModalBaixa();
+            renderizarListaChamados(aluno.chamados);
+            renderizar();
+            renderizarPainel();
+        }
+    }
+
+    window.excluirChamado = async function(chamadoId) {
+        if(!confirm("Deseja excluir este chamado permanentemente?")) return;
+        const aluno = window.alunos[raEmEdicao];
+        aluno.chamados = aluno.chamados.filter(c => c.id !== chamadoId);
+        await updateDoc(doc(db, "alunos", raEmEdicao), { chamados: aluno.chamados });
+        renderizarListaChamados(aluno.chamados);
+        renderizar();
+        renderizarPainel();
+    }
+
+    function renderizarListaChamados(chamados) {
+        const container = document.getElementById('listaChamados');
+        if(!chamados || chamados.length === 0) {
+            container.innerHTML = '<p style="color:#94a3b8; font-size:12px; text-align:center; padding:20px;">Nenhum chamado registrado</p>';
+            return;
+        }
+        
+        // Ordenar: não resolvidos primeiro, depois por data de retorno
+        const hoje = new Date();
+        hoje.setHours(0,0,0,0);
+        
+        const chamadosOrdenados = [...chamados].sort((a, b) => {
+            if(a.resolvido !== b.resolvido) return a.resolvido ? 1 : -1;
+            return new Date(a.dataRetorno) - new Date(b.dataRetorno);
+        });
+        
+        container.innerHTML = chamadosOrdenados.map(c => {
+            const dataRetorno = new Date(c.dataRetorno + 'T00:00:00');
+            const diasRestantes = Math.ceil((dataRetorno - hoje) / (1000 * 60 * 60 * 24));
+            const atrasado = diasRestantes < 0 && !c.resolvido;
+            
+            let statusClass = 'ok';
+            let statusText = `Retorno em ${diasRestantes} dias`;
+            let protocoloClass = '';
+            let itemClass = '';
+            
+            if(c.resolvido) {
+                statusText = '✅ Resolvido em ' + c.dataBaixa;
+                statusClass = 'ok';
+            } else if(atrasado) {
+                statusText = `⚠️ Atrasado ${Math.abs(diasRestantes)} dias`;
+                statusClass = 'atrasado';
+                protocoloClass = 'atrasado';
+                itemClass = 'atrasado';
+            } else if(diasRestantes === 0) {
+                statusText = '📞 Retorno Hoje!';
+                statusClass = '';
+            }
+            
+            return `
+                <div class="chamado-item ${c.resolvido ? 'resolvido' : ''} ${itemClass}">
+                    <div class="chamado-header">
+                        <div>
+                            <span class="chamado-protocolo ${protocoloClass}">#${c.protocolo}</span>
+                            <span class="chamado-status ${c.resolvido ? 'resolvido' : 'pendente'}">${c.resolvido ? 'Resolvido' : 'Aguardando'}</span>
+                        </div>
+                        <span class="chamado-data">Aberto: ${c.dataAbertura}</span>
+                    </div>
+                    <div class="chamado-motivo">${c.motivo}</div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <span class="chamado-retorno ${statusClass}">${statusText}</span>
+                        <div style="display:flex; gap:5px;">
+                            ${!c.resolvido ? `<button onclick="abrirModalBaixa('${c.id}')" class="btn btn-success btn-chamado-small">✅ Dar Baixa</button>` : ''}
+                            <button onclick="excluirChamado('${c.id}')" class="btn btn-danger btn-chamado-small">🗑️</button>
+                        </div>
+                    </div>
+                    ${c.resolvido && c.retornoCentral ? `
+                        <div class="chamado-retorno-central">
+                            <strong>Retorno da Central:</strong> ${c.retornoCentral}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }).join('');
+    }
+
+    // Verificar se há chamados pendentes (não resolvidos)
+    function temChamadosPendentes(aluno) {
+        if(!aluno.chamados || aluno.chamados.length === 0) return false;
+        return aluno.chamados.some(c => !c.resolvido);
+    }
+
+    // Verificar se há chamados atrasados
+    function temChamadosAtrasados(aluno) {
+        if(!aluno.chamados || aluno.chamados.length === 0) return false;
+        const hoje = new Date();
+        hoje.setHours(0,0,0,0);
+        return aluno.chamados.some(c => {
+            if(c.resolvido) return false;
+            const dataRetorno = new Date(c.dataRetorno + 'T00:00:00');
+            return dataRetorno < hoje;
+        });
+    }
+
+    // Contar chamados pendentes
+    function contarChamadosPendentes(aluno) {
+        if(!aluno.chamados || aluno.chamados.length === 0) return 0;
+        return aluno.chamados.filter(c => !c.resolvido).length;
+    }
+
     window.salvarAluno = async function() {
         const ra = document.getElementById('mRA').value.replace(/\D/g, '');
         if(!ra) return alert("RA é obrigatório");
@@ -340,6 +644,10 @@
                 ano: document.getElementById('anoRef').value
             });
         });
+        
+        // Preservar chamados existentes
+        const chamadosExistentes = window.alunos[ra]?.chamados || [];
+        
         const dados = {
             ra: ra,
             nome: document.getElementById('mNome').value.trim(),
@@ -349,6 +657,7 @@
             controleEnvio: document.getElementById('mStatusEnvio').value,
             marcado: window.alunos[ra]?.marcado || false,
             docPendente: window.alunos[ra]?.docPendente || false,
+            chamados: chamadosExistentes, // Preservar chamados
             mensalidades: mensalidades
         };
         try {
@@ -371,6 +680,10 @@
         
         const fCat = document.getElementById('filtroCategoria').value;
         const fMarcado = document.getElementById('filtroMarcado').value;
+        const fChamados = document.getElementById('filtroChamados').value;
+        
+        const hoje = new Date();
+        hoje.setHours(0,0,0,0);
         
         const lista = Object.values(window.alunos).filter(a => {
             const status = a.controleEnvio || 'Pendente';
@@ -379,20 +692,53 @@
             const matchCat = (!fCat || a.categoria === fCat);
             const matchBusca = (a.nome?.toLowerCase().includes(b) || a.ra.includes(b));
             const matchMarcado = (fMarcado === 'todos' || (fMarcado === 'marcados' && a.marcado));
-            return matchUni && matchStatusEnvio && matchCat && matchBusca && matchMarcado;
+            
+            // Filtro de chamados
+            let matchChamados = true;
+            if(fChamados === 'com_chamados') {
+                matchChamados = a.chamados && a.chamados.length > 0;
+            } else if(fChamados === 'chamados_pendentes') {
+                matchChamados = temChamadosPendentes(a);
+            } else if(fChamados === 'chamados_atrasados') {
+                matchChamados = temChamadosAtrasados(a);
+            }
+            
+            return matchUni && matchStatusEnvio && matchCat && matchBusca && matchMarcado && matchChamados;
         }).sort((x,y) => x.nome.localeCompare(y.nome));
 
         t.innerHTML = '';
         lista.forEach(a => {
             const status = a.controleEnvio || 'Pendente';
             const tr = document.createElement('tr');
-            tr.className = status==='Pago'?'row-pago':status==='Enviado'?'row-enviado':status==='Número Inválido'?'row-invalido':'';
+            
+            // Verificar chamados
+            const temChamado = temChamadosPendentes(a);
+            const chamadoAtrasado = temChamadosAtrasados(a);
+            const qtdChamados = contarChamadosPendentes(a);
+            
+            // Definir classe da linha
+            let rowClass = status==='Pago'?'row-pago':status==='Enviado'?'row-enviado':status==='Número Inválido'?'row-invalido':'';
+            if(chamadoAtrasado) rowClass = 'row-chamado-atrasado';
+            tr.className = rowClass;
+            
             const classeNome = a.docPendente ? 'class="nome-doc-pendente"' : '';
+            
+            // Ícone de chamado
+            let chamadoIconClass = 'chamado-icon';
+            if(chamadoAtrasado) chamadoIconClass += ' chamado-atrasado';
+            else if(temChamado) chamadoIconClass += ' chamado-active';
+            
+            let badgeClass = 'badge-chamados';
+            if(chamadoAtrasado) badgeClass += ' atrasado';
 
             tr.innerHTML = `
                 <td><input type="checkbox" class="chk-aluno" data-ra="${a.ra}"></td>
                 <td><span class="star-icon ${a.marcado ? 'star-active' : ''}" onclick="toggleMarcador('${a.ra}')">★</span></td>
                 <td><span class="doc-icon ${a.docPendente ? 'doc-active' : ''}" onclick="toggleDoc('${a.ra}')">📄</span></td>
+                <td style="position:relative;">
+                    <span class="${chamadoIconClass}" onclick="abrirModalEdicao('${a.ra}')" title="${temChamado ? qtdChamados + ' chamado(s) pendente(s)' : 'Sem chamados'}">🎫</span>
+                    ${temChamado ? `<span class="${badgeClass}">${qtdChamados}</span>` : ''}
+                </td>
                 <td>${a.ra}</td>
                 <td onclick="abrirModalEdicao('${a.ra}')" style="cursor:pointer; color:var(--accent); font-weight:700;"><span ${classeNome}>${a.nome}</span></td>
                 <td><div style="display:flex; gap:4px; flex-wrap:wrap; max-width:200px;">${a.mensalidades.map((m,i)=>`<div class="mes-box ${m.pago?'mes-pago':'mes-pendente'}" onclick="togglePagamento('${a.ra}',${i})">${m.mes}</div>`).join('')}</div></td>
@@ -523,7 +869,7 @@
         const mesRef = parseInt(document.getElementById('mesRefDash').value);
         const hoje = new Date(); hoje.setHours(0,0,0,0);
         const lista = Object.values(window.alunos).filter(a => (fUniSelect.length === 0 || fUniSelect.includes(a.unidade)) && (!fCat || a.categoria === fCat));
-        let stats = { pagNoMes: 0, emAtraso: 0, env: 0 };
+        let stats = { pagNoMes: 0, emAtraso: 0, env: 0, chamados: 0, chamadosAtrasados: 0 };
         lista.forEach(a => {
             const s = a.controleEnvio || 'Pendente';
             if(s === 'Enviado') stats.env++;
@@ -531,11 +877,23 @@
             if(mRef && mRef.pago) stats.pagNoMes++;
             const temAtraso = a.mensalidades.some(m => { const dataVenc = new Date(m.vencimento + 'T00:00:00'); return !m.pago && dataVenc < hoje; });
             if(temAtraso) stats.emAtraso++;
+            // Contar chamados
+            if(a.chamados) {
+                const pendentes = a.chamados.filter(c => !c.resolvido);
+                stats.chamados += pendentes.length;
+                // Contar atrasados
+                pendentes.forEach(c => {
+                    const dataRetorno = new Date(c.dataRetorno + 'T00:00:00');
+                    if(dataRetorno < hoje) stats.chamadosAtrasados++;
+                });
+            }
         });
         document.getElementById('d-total').innerText = lista.length;
         document.getElementById('d-pag-mes').innerText = stats.pagNoMes;
         document.getElementById('d-atraso').innerText = stats.emAtraso;
         document.getElementById('d-env').innerText = stats.env;
+        document.getElementById('d-chamados').innerText = stats.chamados;
+        document.getElementById('d-chamados-atrasados').innerText = stats.chamadosAtrasados;
     }
 
     window.toggleMarcador = async function(ra) {
@@ -620,7 +978,7 @@
                 const c = line.split(';'); if (!c[0] || c[0].toUpperCase().includes("RA")) continue; 
                 const ra = c[0].replace(/\D/g, ''); if (window.alunos[ra]) continue; 
                 const m = []; for(let i=mI; i<=mF; i++) m.push({mes:i, ano:ano, pago:false, vencimento:`${ano}-${String(i).padStart(2,'0')}-10`}); 
-                const obj = { ra, nome: c[1]?.trim(), tel: c[2]?.replace(/\D/g,''), unidade: c[3]?.trim(), categoria: c[4]?.trim() || 'Extranet', controleEnvio: 'Pendente', mensalidades: m, marcado: false, docPendente: false };
+                const obj = { ra, nome: c[1]?.trim(), tel: c[2]?.replace(/\D/g,''), unidade: c[3]?.trim(), categoria: c[4]?.trim() || 'Extranet', controleEnvio: 'Pendente', mensalidades: m, marcado: false, docPendente: false, chamados: [] };
                 batch.set(doc(db, "alunos", ra), obj);
             } 
             await batch.commit(); location.reload();
@@ -634,7 +992,11 @@
         event.currentTarget.classList.add('active'); 
     };
 
-    window.fecharModal = () => document.getElementById('modal').style.display = 'none';
+    window.fecharModal = () => {
+        document.getElementById('modal').style.display = 'none';
+        raEmEdicao = null;
+    };
+    
     window.toggleTodos = (el) => document.querySelectorAll('.chk-aluno').forEach(chk => chk.checked = el.checked);
     
     function atualizarOpcoesFiltros() { 
